@@ -26,6 +26,7 @@ sealed class SlastNode {
             is ParenExpr -> visitor.visitParenExpr(this)
             is Program -> visitor.visitProgram(this)
             is BlockStmt -> visitor.visitBlockStmt(this)
+            is NoneValue -> visitor.visitNoneValue(this)
         }
     }
 }
@@ -89,6 +90,8 @@ data class FuncCallExpr(val name: String, val args: List<Expr>) : Expr()
 data class BinaryExpr(val left: Expr, val op: String, val right: Expr) : Expr()
 data class IfExpr(val condition: Expr, val thenExpr: Expr, val elseExpr: Expr) : Expr()
 data class ParenExpr(val expr: Expr) : Expr()
+data object NoneValue : Expr()
+data class Record(val expression: List<Pair<String, Expr>>) : Expr()
 
 fun SlastNode.prettyPrint(tabStop: Int = 0): String {
     val indent = "  ".repeat(tabStop)
@@ -108,6 +111,7 @@ fun SlastNode.prettyPrint(tabStop: Int = 0): String {
         is FunImpureStmt -> indent + "fun ${this.name}( " + this.params.joinToString(", ") + ")\n" + "${indent}{\n" + this
             .body
             .prettyPrint(tabStop+1) + "$indent }"
+        is NoneValue -> "None"
         is FunPureStmt -> indent + "fun ${this.name}( " + this.params.joinToString(", ") + ")\n" + "=>" + this.body
         is IfStmt ->  "${indent} if (${this.condition.prettyPrint()}) {\n" + thenBody.prettyPrint(tabStop+1) +
                 "$indent }\n" + "$indent else {" + this.elseBody.prettyPrint(tabStop+1) + "$indent }"

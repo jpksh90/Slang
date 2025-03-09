@@ -21,6 +21,9 @@ interface ASTVisitor<T> {
     fun visitIfExpr(expr: IfExpr): T
     fun visitParenExpr(expr: ParenExpr): T
     fun visitProgram(program: Program): T
+    fun visitNoneValue(expr: NoneValue): T
+
+    fun visitRecord(expr: Record): T
 }
 
 

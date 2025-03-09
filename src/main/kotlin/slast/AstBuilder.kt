@@ -108,4 +108,8 @@ class ASTBuilder : SimpleLangBaseVisitor<SlastNode>() {
         val statements = ctx.stmt().map { visit(it) as Stmt }
         return Program(statements)
     }
+
+    override fun visitNoneValue(ctx: SimpleLangParser.NoneValueContext): SlastNode {
+        return NoneValue
+    }
 }
