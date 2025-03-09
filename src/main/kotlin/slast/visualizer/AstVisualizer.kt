@@ -74,7 +74,9 @@ fun SlastNode.toTreeNode(): DefaultMutableTreeNode {
         is NoneValue -> DefaultMutableTreeNode("None")
         is Record -> DefaultMutableTreeNode("Record").apply {
             expression.forEach {
-                add(DefaultMutableTreeNode(it.first + " : " + it.second))
+                add(DefaultMutableTreeNode("Record(${it.first})").apply {
+                    add(it.second.toTreeNode())
+                })
             }
         }
 
