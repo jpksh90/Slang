@@ -5,13 +5,15 @@ import SimpleLangParser
 import slast.*
 import com.formdev.flatlaf.FlatDarculaLaf
 import org.antlr.v4.runtime.*
-import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
-import org.fife.ui.rsyntaxtextarea.Theme
+import org.antlr.v4.runtime.Token
+import org.fife.ui.rsyntaxtextarea.*
 import org.fife.ui.rtextarea.RTextScrollPane
 import java.awt.*
 import java.io.InputStream
 import java.util.*
+import java.util.regex.Pattern
 import javax.swing.*
+import javax.swing.text.Segment
 import javax.swing.tree.DefaultMutableTreeNode
 
 
@@ -35,15 +37,28 @@ fun parseProgram(input: String, errorListModel: DefaultListModel<String>): Slast
 }
 
 fun SlastNode.toTreeNode(): DefaultMutableTreeNode {
-    val node = when (this) {
+    return when (this) {
         is Program -> DefaultMutableTreeNode("Program").apply { stmt.forEach { add(it.toTreeNode()) } }
         is LetStmt -> DefaultMutableTreeNode("LetStmt(${name})").apply { add(expr.toTreeNode()) }
         is AssignStmt -> DefaultMutableTreeNode("AssignStmt(${name})").apply { add(expr.toTreeNode()) }
-        is FunPureStmt -> DefaultMutableTreeNode("FunPure(${name})").apply { add(body.toTreeNode()) }
-        is FunImpureStmt -> DefaultMutableTreeNode("FunImpure(${name})").apply { add(body.toTreeNode()) }
+        is FunPureStmt -> DefaultMutableTreeNode("FunPure(${name})").apply {
+            params.forEach { add(DefaultMutableTreeNode(it)) }
+            add(body.toTreeNode())
+        }
+
+        is FunImpureStmt -> DefaultMutableTreeNode("FunImpure(${name})").apply {
+            params.forEach { add(DefaultMutableTreeNode(it)) }
+            add(body.toTreeNode())
+        }
+
         is WhileStmt -> DefaultMutableTreeNode("While").apply { add(condition.toTreeNode()); add(body.toTreeNode()) }
         is PrintStmt -> DefaultMutableTreeNode("PrintStmt").apply { args.forEach { add(it.toTreeNode()) } }
-        is IfStmt -> DefaultMutableTreeNode("IfStmt").apply { add(condition.toTreeNode()); add(thenBody.toTreeNode()); add(elseBody.toTreeNode()) }
+        is IfStmt -> DefaultMutableTreeNode("IfStmt").apply {
+            add(condition.toTreeNode())
+            add(thenBody.toTreeNode())
+            add(elseBody.toTreeNode())
+        }
+
         is ExprStmt -> DefaultMutableTreeNode("ExprStmt").apply { add(expr.toTreeNode()) }
         is ReturnStmt -> DefaultMutableTreeNode("ReturnStmt").apply { add(expr.toTreeNode()) }
         is BlockStmt -> DefaultMutableTreeNode("BlockStmt").apply { stmts.forEach { add(it.toTreeNode()) } }
@@ -53,10 +68,21 @@ fun SlastNode.toTreeNode(): DefaultMutableTreeNode {
         is ReadInputExpr -> DefaultMutableTreeNode("ReadInputExpr")
         is FuncCallExpr -> DefaultMutableTreeNode("FuncCall(${name})").apply { args.forEach { add(it.toTreeNode()) } }
         is BinaryExpr -> DefaultMutableTreeNode("BinaryExpr($op)").apply { add(left.toTreeNode()); add(right.toTreeNode()) }
-        is IfExpr -> DefaultMutableTreeNode("IfExpr").apply { add(condition.toTreeNode()); add(thenExpr.toTreeNode()); add(elseExpr.toTreeNode()) }
+        is IfExpr -> DefaultMutableTreeNode("IfExpr").apply {
+            add(condition.toTreeNode()); add(thenExpr.toTreeNode());
+            add(elseExpr.toTreeNode())
+        }
+
         is ParenExpr -> DefaultMutableTreeNode("ParenExpr").apply { add(expr.toTreeNode()) }
+        is NoneValue -> DefaultMutableTreeNode("None")
+        is Record -> DefaultMutableTreeNode("Record").apply {
+            expression.forEach {
+                add(DefaultMutableTreeNode(it.first + " : " + it.second))
+            }
+        }
+
+        is StringExpr -> DefaultMutableTreeNode("StringExpr($value)")
     }
-    return node
 }
 
 fun expandAllNodes(tree: JTree) {
@@ -71,7 +97,7 @@ fun expandAllNodes(tree: JTree) {
 
 class ASTViewer : JFrame("SimpleLang AST Visualizer") {
     private val inputArea = RSyntaxTextArea(20, 30).apply {
-        syntaxEditingStyle = "text/kotlin"
+        syntaxEditingStyle = "text/simplelang"
         isCodeFoldingEnabled = true
         tabSize = 4
         isBracketMatchingEnabled = true
@@ -92,6 +118,9 @@ class ASTViewer : JFrame("SimpleLang AST Visualizer") {
     init {
         defaultCloseOperation = EXIT_ON_CLOSE
         layout = BorderLayout()
+
+//        val iconUrl = javaClass.getResource("/icons/icon.png")
+//        this.iconImage = ImageIcon(iconUrl).image
 
         errorList.cellRenderer = ErrorListCellRenderer()
 

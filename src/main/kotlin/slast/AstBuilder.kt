@@ -108,4 +108,22 @@ class ASTBuilder : SimpleLangBaseVisitor<SlastNode>() {
         val statements = ctx.stmt().map { visit(it) as Stmt }
         return Program(statements)
     }
+
+    override fun visitNoneValue(ctx: SimpleLangParser.NoneValueContext): SlastNode {
+        return NoneValue
+    }
+
+    override fun visitRecordExpr(ctx: SimpleLangParser.RecordExprContext): SlastNode {
+        val recordIds = ctx.recordElems().ID()
+        val recordExprs = ctx.recordElems().expr()
+        val recordElementPairs = mutableListOf<Pair<String, Expr>>()
+        for (i in 0 until recordIds.size) {
+            recordElementPairs.addLast(Pair(recordIds[i].text, visit(recordExprs[i]) as Expr))
+        }
+        return Record(recordElementPairs)
+    }
+
+    override fun visitStringExpr(ctx: SimpleLangParser.StringExprContext): SlastNode {
+        return StringExpr(ctx.STRING().text)
+    }
 }

@@ -1,35 +1,11 @@
-<rsyntaxtextarea>
-    <syntaxstyle id="text/simplelang">
-        <rules>
-            <!-- Keywords -->
-            <keywords>
-                <keyword>let</keyword>
-                <keyword>var</keyword>
-                <keyword>if</keyword>
-                <keyword>else</keyword>
-                <keyword>while</keyword>
-                <keyword>return</keyword>
-                <keyword>print</keyword>
-            </keywords>
-
-            <!-- Operators -->
-            <operators>
-                <operator>=</operator>
-                <operator>+</operator>
-                <operator>-</operator>
-                <operator>*</operator>
-                <operator>/</operator>
-            </operators>
-
-            <!-- Comments -->
-            <comments>
-                <comment start="//" end="\n"/>
-            </comments>
-
-            <!-- Strings -->
-            <markups>
-                <markup start="\"" end="\"" escape="\\"/>
-            </markups>
-        </rules>
-    </syntaxstyle>
-</rsyntaxtextarea>
+<RSyntaxTextArea>
+    <Tokens>
+        <Token color="#0000FF" type="reservedWords">let fun while for if else return print readInput itfe</Token>
+        <Token color="#7F0055" type="dataTypes">true false None</Token>
+        <Token color="#2A00FF" type="identifiers">[a-zA-Z_][a-zA-Z0-9_]*</Token>
+        <Token color="#000000" type="operators">== != < > && || + - * / =</Token>
+        <Token color="#808080" type="comments">//.*</Token>
+        <Token color="#008000" type="literals">\"(\\.|[^\\"])*\"</Token>
+        <Token color="#B000B0" type="numbers">[0-9]+</Token>
+    </Tokens>
+</RSyntaxTextArea>

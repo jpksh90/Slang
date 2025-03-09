@@ -15,6 +15,10 @@ stmt
     | 'return' expr ';' #returnStmt
     ;
 
+recordElems
+    : ID ':' expr (',' ID ':' expr)*
+    ;
+
 blockStmt : '{' stmt* '}';
 ifStmt : '{' stmt* '}';
 elseStmt : '{' stmt* '}';
@@ -22,14 +26,18 @@ elseStmt : '{' stmt* '}';
 expr
     : INT                         # intExpr
     | BOOL                        # boolExpr
+    | STRING                      # stringExpr
     | ID                          # varExpr
+    | NONE                        # noneValue
     | 'readInput' '(' ')'         # readInputExpr
     | ID '(' argList? ')'         # funcCallExpr
     | expr op=('+'|'-'|'*'|'/') expr  # arithmeticExpr
     | expr op=('=='|'!='|'<'|'>') expr # comparisonExpr
     | expr op=('&&'|'||') expr    # booleanExpr
-    | 'ifte' '(' expr ',' expr ',' expr ')' # ifExpr
+    | 'if' '('  expr ')' 'then' expr 'else' expr # ifExpr
     | '(' expr ')'                # parenExpr
+    | expr '.' ID                 # fieldAccessExpr
+    | '{' recordElems? '}'       # recordExpr
     ;
 
 argList : expr (',' expr)* ;
@@ -38,8 +46,13 @@ paramList : ID (',' ID)* ;
 
 BOOL : 'true' | 'false' ;
 
+NONE : 'None';
+
 ID : [a-zA-Z_][a-zA-Z0-9_]* ;
 
 INT : [0-9]+ ;
+
+STRING : '"' ( ~["\\] | '\\' . )* '"' ;
+
 
 WS : [ \t\r\n]+ -> skip ;
