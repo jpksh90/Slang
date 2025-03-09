@@ -4,7 +4,7 @@ prog    : stmt* EOF ;
 
 stmt
     : 'let' ID '=' expr ';'    # letExpr
-    | ID '=' expr ';' # assignExpr
+    | lhs '=' expr ';' # assignExpr
     | 'fun' ID '(' paramList? ')' '=>'  expr ';' # funPure
     | 'fun' ID '(' paramList? ')' '{' stmt* '}' # funImpure
     | 'while' expr blockStmt # whileStmt
@@ -23,22 +23,36 @@ blockStmt : '{' stmt* '}';
 ifStmt : '{' stmt* '}';
 elseStmt : '{' stmt* '}';
 
+lhs : ID | fieldAccess | deref;
+
 expr
+    : primaryExpr                                       # primaryExprWrapper
+    | expr '.' ID                                       # fieldAccessExpr
+    | expr '(' argList? ')'                             # funcCallExpr
+    | 'if' '(' expr ')' 'then' expr 'else' expr         # ifExpr
+    | expr op=('*' | '/') expr                          # arithmeticExpr
+    | expr op=('+' | '-') expr                          # arithmeticExpr
+    | expr op=('==' | '!=' | '<' | '>') expr            # comparisonExpr
+    | expr op=('&&' | '||') expr                        # booleanExpr
+    ;
+
+primaryExpr
     : INT                         # intExpr
     | BOOL                        # boolExpr
     | STRING                      # stringExpr
     | ID                          # varExpr
     | NONE                        # noneValue
     | 'readInput' '(' ')'         # readInputExpr
-    | ID '(' argList? ')'         # funcCallExpr
-    | expr op=('+'|'-'|'*'|'/') expr  # arithmeticExpr
-    | expr op=('=='|'!='|'<'|'>') expr # comparisonExpr
-    | expr op=('&&'|'||') expr    # booleanExpr
-    | 'if' '('  expr ')' 'then' expr 'else' expr # ifExpr
+    | '{' recordElems? '}'        # recordExpr
+    | 'ref' '(' expr ')'          # refExpr
     | '(' expr ')'                # parenExpr
-    | expr '.' ID                 # fieldAccessExpr
-    | '{' recordElems? '}'       # recordExpr
+    | deref                       # derefExpr
     ;
+
+fieldAccess:
+    expr '.' ID;
+
+deref: 'deref(' expr ')';
 
 argList : expr (',' expr)* ;
 

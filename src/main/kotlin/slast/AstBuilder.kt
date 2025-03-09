@@ -1,7 +1,13 @@
 package slast
 
 import SimpleLangBaseVisitor
+import SimpleLangLexer
 import SimpleLangParser
+import org.antlr.v4.runtime.ANTLRInputStream
+import org.antlr.v4.runtime.CommonTokenStream
+import slast.visualizer.CustomErrorListener
+import javax.swing.DefaultListModel
+import javax.swing.SwingUtilities
 
 class ASTBuilder : SimpleLangBaseVisitor<SlastNode>() {
 
@@ -10,7 +16,7 @@ class ASTBuilder : SimpleLangBaseVisitor<SlastNode>() {
     }
 
     override fun visitAssignExpr(ctx: SimpleLangParser.AssignExprContext): SlastNode {
-        return AssignStmt(ctx.ID().text, visit(ctx.expr()) as Expr)
+        return AssignStmt(visit(ctx.lhs()) as Expr, visit(ctx.expr()) as Expr)
     }
 
     override fun visitFunPure(ctx: SimpleLangParser.FunPureContext): SlastNode {
@@ -68,7 +74,7 @@ class ASTBuilder : SimpleLangBaseVisitor<SlastNode>() {
 
     override fun visitFuncCallExpr(ctx: SimpleLangParser.FuncCallExprContext): SlastNode {
         val args = ctx.argList()?.expr()?.map { visit(it) as Expr } ?: emptyList()
-        return FuncCallExpr(ctx.ID().text, args)
+        return FuncCallExpr(visit(ctx.expr()) as Expr, args)
     }
 
     override fun visitArithmeticExpr(ctx: SimpleLangParser.ArithmeticExprContext): SlastNode {
@@ -96,7 +102,7 @@ class ASTBuilder : SimpleLangBaseVisitor<SlastNode>() {
     }
 
     override fun visitForStmt(ctx: SimpleLangParser.ForStmtContext): SlastNode {
-        val initialization = AssignStmt(ctx.ID().text, visit(ctx.expr(0)) as Expr)
+        val initialization = AssignStmt(visit(ctx.ID()) as Expr, visit(ctx.expr(0)) as Expr)
         val condition = visit(ctx.expr(1)) as Expr
         val update = visit(ctx.expr(2)) as Stmt
         val body = ctx.blockStmt().stmt().map { visit(it) as Stmt }
@@ -126,4 +132,76 @@ class ASTBuilder : SimpleLangBaseVisitor<SlastNode>() {
     override fun visitStringExpr(ctx: SimpleLangParser.StringExprContext): SlastNode {
         return StringExpr(ctx.STRING().text)
     }
+
+    override fun visitRefExpr(ctx: SimpleLangParser.RefExprContext): SlastNode {
+        return RefExpr(visit(ctx.expr()) as Expr)
+    }
+
+    override fun visitDerefExpr(ctx: SimpleLangParser.DerefExprContext): SlastNode {
+        return DerefExpr(visit(ctx.deref()) as Expr)
+    }
+
+    override fun visitDeref(ctx: SimpleLangParser.DerefContext): SlastNode {
+        return visit(ctx.expr())
+    }
+
+    override fun visitLhs(ctx: SimpleLangParser.LhsContext): SlastNode {
+        if (ctx.deref() != null) {
+            return DerefExpr(visit(ctx.deref()) as Expr)
+        }
+
+        if (ctx.fieldAccess() != null) {
+            return visit(ctx.fieldAccess())
+        }
+        return VarExpr(ctx.ID().text)
+    }
+
+    override fun visitPrimaryExprWrapper(ctx: SimpleLangParser.PrimaryExprWrapperContext): SlastNode {
+        /*
+        primaryExpr
+    : INT                         # intExpr
+    | BOOL                        # boolExpr
+    | STRING                      # stringExpr
+    | ID                          # varExpr
+    | NONE                        # noneValue
+    | 'readInput' '(' ')'         # readInputExpr
+    | '{' recordElems? '}'        # recordExpr
+    | 'ref' '(' expr ')'          # refExpr
+    | '(' expr ')'                # parenExpr
+    | deref                       # derefExpr
+         */
+        return visit(ctx.primaryExpr())
+    }
+
+    override fun visitFieldAccess(ctx: SimpleLangParser.FieldAccessContext): SlastNode {
+        return FieldAccess(visit(ctx.expr()) as Expr, ctx.ID().text)
+    }
+
+    override fun visitFieldAccessExpr(ctx: SimpleLangParser.FieldAccessExprContext): SlastNode {
+        return FieldAccess(visit(ctx.expr()) as Expr, ctx.ID().text)
+    }
+
+}
+
+fun main(args: Array<String>) {
+    val x = """let r = {a: {c: 7}, b: 5};
+        r.a.c = 15;
+    """.trimMargin()
+
+    fun parseProgram(input: String): SlastNode {
+        val parser = SimpleLangParser(CommonTokenStream(SimpleLangLexer(ANTLRInputStream(input))))
+
+        parser.removeErrorListeners()
+        val errorListener = CustomErrorListener()
+        parser.addErrorListener(errorListener)
+
+        val parseTree = parser.prog()
+
+        val astBuilder = ASTBuilder()
+        val ast = astBuilder.visit(parseTree) as Program
+        return ast
+    }
+
+    print(parseProgram(x))
+
 }
