@@ -2,19 +2,22 @@ package slast.visualizer
 
 import SimpleLangLexer
 import SimpleLangParser
-import slast.*
 import com.formdev.flatlaf.FlatDarculaLaf
-import org.antlr.v4.runtime.*
-import org.fife.ui.rsyntaxtextarea.*
+import org.antlr.v4.runtime.ANTLRInputStream
+import org.antlr.v4.runtime.CommonTokenStream
+import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
+import org.fife.ui.rsyntaxtextarea.Theme
 import org.fife.ui.rtextarea.RTextScrollPane
-import java.awt.*
+import slast.*
+import java.awt.BorderLayout
+import java.awt.GridLayout
 import java.io.InputStream
 import java.util.*
 import javax.swing.*
 import javax.swing.tree.DefaultMutableTreeNode
 
 
-fun parseProgram(input: String, errorListModel: DefaultListModel<String>): SlastNode? {
+fun parseProgram(input: String, errorListModel: DefaultListModel<String>): SlastNode {
     val parser = SimpleLangParser(CommonTokenStream(SimpleLangLexer(ANTLRInputStream(input))))
 
     parser.removeErrorListeners()
@@ -36,8 +39,16 @@ fun parseProgram(input: String, errorListModel: DefaultListModel<String>): Slast
 fun SlastNode.toTreeNode(): DefaultMutableTreeNode {
     return when (this) {
         is Program -> DefaultMutableTreeNode("Program").apply { stmt.forEach { add(it.toTreeNode()) } }
-        is LetStmt -> DefaultMutableTreeNode("LetStmt(${name})").apply { add(expr.toTreeNode()) }
-        is AssignStmt -> DefaultMutableTreeNode("AssignStmt").apply { add(lhs.toTreeNode()); add(expr.toTreeNode()) }
+        is LetStmt -> DefaultMutableTreeNode("LetStmt(${this.prettyPrint()})").apply {
+            add(DefaultMutableTreeNode("id=${name}"))
+            add(expr.toTreeNode())
+        }
+
+        is AssignStmt -> DefaultMutableTreeNode("AssignStmt(${this.prettyPrint()})").apply {
+            add(lhs.toTreeNode())
+            add(expr.toTreeNode())
+        }
+
         is FunPureStmt -> DefaultMutableTreeNode("FunPure(${name})").apply {
             params.forEach { add(DefaultMutableTreeNode(it)) }
             add(body.toTreeNode())
@@ -48,8 +59,15 @@ fun SlastNode.toTreeNode(): DefaultMutableTreeNode {
             add(body.toTreeNode())
         }
 
-        is WhileStmt -> DefaultMutableTreeNode("While").apply { add(condition.toTreeNode()); add(body.toTreeNode()) }
-        is PrintStmt -> DefaultMutableTreeNode("PrintStmt").apply { args.forEach { add(it.toTreeNode()) } }
+        is WhileStmt -> DefaultMutableTreeNode("While").apply {
+            add(condition.toTreeNode())
+            add(body.toTreeNode())
+        }
+
+        is PrintStmt -> DefaultMutableTreeNode("PrintStmt").apply {
+            args.forEach { add(it.toTreeNode()) }
+        }
+
         is IfStmt -> DefaultMutableTreeNode("IfStmt").apply {
             add(condition.toTreeNode())
             add(thenBody.toTreeNode())
@@ -64,17 +82,24 @@ fun SlastNode.toTreeNode(): DefaultMutableTreeNode {
         is VarExpr -> DefaultMutableTreeNode("VarExpr($name)")
         is ReadInputExpr -> DefaultMutableTreeNode("ReadInputExpr")
         is FuncCallExpr -> DefaultMutableTreeNode("FuncCall(${target})").apply { args.forEach { add(it.toTreeNode()) } }
-        is BinaryExpr -> DefaultMutableTreeNode("BinaryExpr($op)").apply { add(left.toTreeNode()); add(right.toTreeNode()) }
+        is BinaryExpr -> DefaultMutableTreeNode("BinaryExpr(${this.prettyPrint()})").apply {
+            add(left.toTreeNode())
+            add(DefaultMutableTreeNode("op=${op}"))
+            add(right.toTreeNode())
+        }
+
         is IfExpr -> DefaultMutableTreeNode("IfExpr").apply {
-            add(condition.toTreeNode()); add(thenExpr.toTreeNode());
+            add(condition.toTreeNode())
+            add(thenExpr.toTreeNode())
             add(elseExpr.toTreeNode())
         }
 
-        is ParenExpr -> DefaultMutableTreeNode("ParenExpr").apply { add(expr.toTreeNode()) }
-        is NoneValue -> DefaultMutableTreeNode("None")
+        is ParenExpr -> DefaultMutableTreeNode("ParenExpr(${this.prettyPrint()})").apply { add(expr.toTreeNode()) }
+        is NoneValue -> DefaultMutableTreeNode("$this")
         is Record -> DefaultMutableTreeNode("Record").apply {
             expression.forEach {
-                add(DefaultMutableTreeNode("Record(${it.first})").apply {
+                add(DefaultMutableTreeNode("ID(${it.first})"))
+                add(DefaultMutableTreeNode("Expr(${it.second.prettyPrint()})").apply {
                     add(it.second.toTreeNode())
                 })
             }
@@ -83,8 +108,17 @@ fun SlastNode.toTreeNode(): DefaultMutableTreeNode {
         is StringExpr -> DefaultMutableTreeNode("StringExpr($value)")
         is DerefExpr -> DefaultMutableTreeNode("DerefExpr(${expr.toTreeNode()})")
         is RefExpr -> DefaultMutableTreeNode("RefExpr(${expr.toTreeNode()})")
-        is DerefStmt -> DefaultMutableTreeNode("DerefStmt").apply { add(lhs.toTreeNode()); add(rhs.toTreeNode()) }
-        is FieldAccess -> DefaultMutableTreeNode("FieldAccess").apply { add(lhs.toTreeNode()); add(DefaultMutableTreeNode(rhs)) }
+        is DerefStmt -> DefaultMutableTreeNode("DerefStmt(${this.prettyPrint()})").apply {
+            add(lhs.toTreeNode()); add(
+            rhs.toTreeNode
+                ()
+        )
+        }
+
+        is FieldAccess -> DefaultMutableTreeNode("FieldAccess(${this.prettyPrint()})").apply {
+            add(lhs.toTreeNode())
+            add(DefaultMutableTreeNode(rhs))
+        }
     }
 }
 
@@ -177,7 +211,12 @@ class ASTViewer : JFrame("SimpleLang AST Visualizer") {
                     val content = file.readText()
                     inputArea.text = content
                 } catch (e: Exception) {
-                    JOptionPane.showMessageDialog(this, "Error loading file: ${e.message}", "Error", JOptionPane.ERROR_MESSAGE)
+                    JOptionPane.showMessageDialog(
+                        this,
+                        "Error loading file: ${e.message}",
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE
+                    )
                 }
             }
         }
@@ -202,7 +241,7 @@ class ASTViewer : JFrame("SimpleLang AST Visualizer") {
 fun main() {
     val props = Properties()
     props["text/simplelang"] = "languages.simplelang"
-    FlatDarculaLaf.setup();
+    FlatDarculaLaf.setup()
 
 //    TokenMakerFactory.getDefaultInstance().("text/simplelang", "languages.simplelang")
     SwingUtilities.invokeLater { ASTViewer().isVisible = true }

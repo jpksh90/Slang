@@ -174,11 +174,11 @@ class ASTBuilder : SimpleLangBaseVisitor<SlastNode>() {
     }
 
     override fun visitFieldAccess(ctx: SimpleLangParser.FieldAccessContext): SlastNode {
-        return FieldAccess(visit(ctx.expr()) as Expr, ctx.ID().text)
+        return FieldAccess(visit(ctx.expr()) as Expr, VarExpr(ctx.ID().text))
     }
 
     override fun visitFieldAccessExpr(ctx: SimpleLangParser.FieldAccessExprContext): SlastNode {
-        return FieldAccess(visit(ctx.expr()) as Expr, ctx.ID().text)
+        return FieldAccess(visit(ctx.expr()) as Expr, VarExpr(ctx.ID().text))
     }
 
 }

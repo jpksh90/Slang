@@ -102,7 +102,7 @@ data class Record(val expression: List<Pair<String, Expr>>) : Expr()
 data class StringExpr(val value: String) : Expr()
 data class RefExpr(val expr: Expr) : Expr()
 data class DerefExpr(val expr: Expr) : Expr()
-data class FieldAccess(val lhs: Expr, val rhs: String) : Expr()
+data class FieldAccess(val lhs: Expr, val rhs: Expr) : Expr()
 
 fun SlastNode.prettyPrint(tabStop: Int = 0): String {
     val indent = "  ".repeat(tabStop)
