@@ -78,8 +78,8 @@ fun SlastNode.toTreeNode(): DefaultMutableTreeNode {
         is ExprStmt -> DefaultMutableTreeNode("ExprStmt").apply { add(expr.toTreeNode()) }
         is ReturnStmt -> DefaultMutableTreeNode("ReturnStmt").apply { add(expr.toTreeNode()) }
         is BlockStmt -> DefaultMutableTreeNode("BlockStmt").apply { stmts.forEach { add(it.toTreeNode()) } }
-        is IntExpr -> DefaultMutableTreeNode("IntExpr($value)")
-        is BoolExpr -> DefaultMutableTreeNode("BoolExpr($value)")
+        is NumberLiteral -> DefaultMutableTreeNode("Number($value)")
+        is BoolLiteral -> DefaultMutableTreeNode("Boolean($value)")
         is VarExpr -> DefaultMutableTreeNode("VarExpr($name)")
         is ReadInputExpr -> DefaultMutableTreeNode("ReadInputExpr")
         is FuncCallExpr -> DefaultMutableTreeNode("FuncCall(${target})").apply { args.forEach { add(it.toTreeNode()) } }
@@ -106,7 +106,7 @@ fun SlastNode.toTreeNode(): DefaultMutableTreeNode {
             }
         }
 
-        is StringExpr -> DefaultMutableTreeNode("StringExpr($value)")
+        is StringLiteral -> DefaultMutableTreeNode("StringExpr($value)")
         is DerefExpr -> DefaultMutableTreeNode("DerefExpr(${expr.toTreeNode()})")
         is RefExpr -> DefaultMutableTreeNode("RefExpr(${expr.toTreeNode()})")
         is DerefStmt -> DefaultMutableTreeNode("DerefStmt(${this.prettyPrint()})").apply {

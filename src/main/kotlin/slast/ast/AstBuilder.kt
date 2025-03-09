@@ -41,8 +41,8 @@ class ASTBuilder() : SimpleLangBaseVisitor<SlastNode>() {
 
     override fun visitIfThenElseStmt(ctx: SimpleLangParser.IfThenElseStmtContext): SlastNode {
         val condition = visit(ctx.expr()) as Expr
-        val thenBody = BlockStmt(ctx.ifStmt().stmt().map { visit(it) as Stmt })
-        val elseBody = BlockStmt(ctx.elseStmt().stmt().map { visit(it) as Stmt })
+        val thenBody = BlockStmt(ctx.blockStmt(0).stmt().map { visit(it) as Stmt })
+        val elseBody = BlockStmt(ctx.blockStmt(1).stmt().map { visit(it) as Stmt })
         return IfStmt(condition, thenBody, elseBody)
     }
 
@@ -55,11 +55,11 @@ class ASTBuilder() : SimpleLangBaseVisitor<SlastNode>() {
     }
 
     override fun visitIntExpr(ctx: SimpleLangParser.IntExprContext): SlastNode {
-        return IntExpr(ctx.INT().text.toInt())
+        return NumberLiteral(ctx.NUMBER().text.toDouble())
     }
 
     override fun visitBoolExpr(ctx: SimpleLangParser.BoolExprContext): SlastNode {
-        return BoolExpr(ctx.BOOL().text.toBoolean())
+        return BoolLiteral(ctx.BOOL().text.toBoolean())
     }
 
     override fun visitVarExpr(ctx: SimpleLangParser.VarExprContext): SlastNode {
@@ -133,7 +133,7 @@ class ASTBuilder() : SimpleLangBaseVisitor<SlastNode>() {
     }
 
     override fun visitStringExpr(ctx: SimpleLangParser.StringExprContext): SlastNode {
-        return StringExpr(ctx.STRING().text)
+        return StringLiteral(ctx.STRING().text)
     }
 
     override fun visitRefExpr(ctx: SimpleLangParser.RefExprContext): SlastNode {

@@ -14,8 +14,8 @@ class SimpleLangToKotlin {
             is WhileStmt -> "while (${generate(ast.condition)}) { ${generate(ast.body)} }"
             is PrintStmt -> "println(${ast.args.joinToString(", ") { generate(it) }})"
             is BlockStmt -> ast.stmts.joinToString("\n") { generate(it) }
-            is IntExpr -> ast.value.toString()
-            is BoolExpr -> ast.value.toString()
+            is NumberLiteral -> ast.value.toString()
+            is BoolLiteral -> ast.value.toString()
             is VarExpr -> ast.name
             is BinaryExpr -> "(${generate(ast.left)} ${ast.op} ${generate(ast.right)})"
             is DerefExpr -> TODO()
@@ -27,7 +27,7 @@ class SimpleLangToKotlin {
             ReadInputExpr -> TODO()
             is Record -> TODO()
             is RefExpr -> TODO()
-            is StringExpr -> TODO()
+            is StringLiteral -> TODO()
             is DerefStmt -> TODO()
             is ExprStmt -> TODO()
             is FunImpureStmt -> TODO()

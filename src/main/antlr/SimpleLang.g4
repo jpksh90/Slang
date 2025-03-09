@@ -10,7 +10,7 @@ stmt
     | 'while' expr blockStmt # whileStmt
     | 'for' '(' ID '=' expr ';' expr ';' ID1 = expr ')' blockStmt # forStmt
     | 'print' '(' argList? ')' ';' # printStmt
-    | 'if' '(' expr ')' ifStmt 'else' elseStmt #ifThenElseStmt
+    | 'if' '(' expr ')' blockStmt 'else' blockStmt #ifThenElseStmt
     | expr ';' # exprStmt
     | 'return' expr ';' #returnStmt
     | 'do' blockStmt 'while' '(' expr ')' ';' #doWhileStmt
@@ -21,8 +21,6 @@ recordElems
     ;
 
 blockStmt : '{' stmt* '}';
-ifStmt : '{' stmt* '}';
-elseStmt : '{' stmt* '}';
 
 lhs : ID | fieldAccess | deref;
 
@@ -38,7 +36,7 @@ expr
     ;
 
 primaryExpr
-    : INT                         # intExpr
+    : NUMBER                         # intExpr
     | BOOL                        # boolExpr
     | STRING                      # stringExpr
     | ID                          # varExpr
@@ -65,7 +63,7 @@ NONE : 'None';
 
 ID : [a-zA-Z_][a-zA-Z0-9_]* ;
 
-INT : [0-9]+ ;
+NUMBER : [0-9]+ ('.' [0-9]+)? ;
 
 STRING : '"' ( ~["\\] | '\\' . )* '"' ;
 

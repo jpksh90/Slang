@@ -1,10 +1,10 @@
  fun power(base, exp) {
   {
-     let result = 1;
-     while (exp > 0) {
+     let result = 1.0;
+     while (exp > 0.0) {
       {
         result = result * base;
-        exp = exp - 1;
+        exp = exp - 1.0;
       }
     }
      return result;

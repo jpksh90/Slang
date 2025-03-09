@@ -16,8 +16,8 @@ sealed class SlastNode {
             is IfStmt -> visitor.visitIfStmt(this)
             is ExprStmt -> visitor.visitExprStmt(this)
             is ReturnStmt -> visitor.visitReturnStmt(this)
-            is IntExpr -> visitor.visitIntExpr(this)
-            is BoolExpr -> visitor.visitBoolExpr(this)
+            is NumberLiteral -> visitor.visitIntExpr(this)
+            is BoolLiteral -> visitor.visitBoolExpr(this)
             is VarExpr -> visitor.visitVarExpr(this)
             is ReadInputExpr -> visitor.visitReadInputExpr(this)
             is FuncCallExpr -> visitor.visitFuncCallExpr(this)
@@ -28,7 +28,7 @@ sealed class SlastNode {
             is BlockStmt -> visitor.visitBlockStmt(this)
             is NoneValue -> visitor.visitNoneValue(this)
             is Record -> visitor.visitRecord(this)
-            is StringExpr -> visitor.visitStringExpr(this)
+            is StringLiteral -> visitor.visitStringExpr(this)
             is DerefExpr -> visitor.visitDerefExpr(this)
             is RefExpr -> visitor.visitRefExpr(this)
             is DerefStmt -> visitor.visitDerefStmt(this)
@@ -89,8 +89,8 @@ data class DerefStmt(val lhs: Expr, val rhs: Expr) : Stmt()
 
 // Expressions
 sealed class Expr : SlastNode()
-data class IntExpr(val value: Int) : Expr()
-data class BoolExpr(val value: Boolean) : Expr()
+data class NumberLiteral(val value: Double) : Expr()
+data class BoolLiteral(val value: Boolean) : Expr()
 data class VarExpr(val name: String) : Expr()
 data object ReadInputExpr : Expr()
 data class FuncCallExpr(val target: String, val args: List<Expr>) : Expr()
@@ -99,7 +99,7 @@ data class IfExpr(val condition: Expr, val thenExpr: Expr, val elseExpr: Expr) :
 data class ParenExpr(val expr: Expr) : Expr()
 data object NoneValue : Expr()
 data class Record(val expression: List<Pair<String, Expr>>) : Expr()
-data class StringExpr(val value: String) : Expr()
+data class StringLiteral(val value: String) : Expr()
 data class RefExpr(val expr: Expr) : Expr()
 data class DerefExpr(val expr: Expr) : Expr()
 data class FieldAccess(val lhs: Expr, val rhs: Expr) : Expr()
@@ -108,10 +108,10 @@ fun SlastNode.prettyPrint(tabStop: Int = 0): String {
     val indent = "  ".repeat(tabStop)
     return when (this) {
         is BinaryExpr -> "${left.prettyPrint()} ${op} ${right.prettyPrint()}"
-        is BoolExpr -> value.toString()
+        is BoolLiteral -> value.toString()
         is FuncCallExpr -> "$target(${args.joinToString(", ") { it.prettyPrint() }})"
         is IfExpr -> "if (${condition.prettyPrint()}) then ${thenExpr.prettyPrint()} else ${elseExpr.prettyPrint()}"
-        is IntExpr -> value.toString()
+        is NumberLiteral -> value.toString()
         is ParenExpr -> "(${expr.prettyPrint()})"
         ReadInputExpr -> "readInput()"
         is VarExpr -> name
@@ -128,7 +128,7 @@ fun SlastNode.prettyPrint(tabStop: Int = 0): String {
         is ReturnStmt -> "$indent return ${expr.prettyPrint()};"
         is WhileStmt -> "$indent while (${condition.prettyPrint()}) {\n" + body.prettyPrint(tabStop + 1) + "\n$indent}"
         is Record -> "$indent{\n" + expression.joinToString("\n") { "$indent  ${it.first} : ${it.second.prettyPrint()}" } + "\n$indent}"
-        is StringExpr -> "\"$value\""
+        is StringLiteral -> "\"$value\""
         is DerefExpr -> "deref(${expr.prettyPrint()})"
         is RefExpr -> "ref(${expr.prettyPrint()})"
         is DerefStmt -> "$indent deref(${lhs.prettyPrint()}) = ${rhs.prettyPrint()};"

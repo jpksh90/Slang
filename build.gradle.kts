@@ -35,3 +35,10 @@ tasks.named("compileKotlin") {
 kotlin {
     jvmToolchain(21)
 }
+
+tasks.register("showGui", JavaExec::class) {
+    group = "application"
+    description = "Runs the AST Visualizer GUI"
+    mainClass.set("slast.visualizer.AstVisualizerKt")
+    classpath = sourceSets.main.get().runtimeClasspath
+}

@@ -1,1 +1,1 @@
- let x = true + 1;
+ let x = true + 1.0;
