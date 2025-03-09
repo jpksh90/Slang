@@ -1,4 +1,2 @@
-fun mod( a, b)
-=>IfExpr(condition=BinaryExpr(left=VarExpr(name=a), op=<, right=VarExpr(name=b)), thenExpr=VarExpr(name=a), elseExpr=FuncCallExpr(target=mod, args=[BinaryExpr(left=VarExpr(name=a), op=-, right=VarExpr(name=b)), VarExpr(name=b)]))
-fun gcd( a, b)
-=>IfExpr(condition=BinaryExpr(left=VarExpr(name=b), op===, right=IntExpr(value=0)), thenExpr=VarExpr(name=a), elseExpr=FuncCallExpr(target=gcd, args=[VarExpr(name=b), FuncCallExpr(target=mod, args=[VarExpr(name=a), VarExpr(name=b)])]))
+ fun mod(a, b) => if (a < b) then a else mod(a - b, b)
+ fun gcd(a, b) => if (b == 0) then a else gcd(b, mod(a, b))

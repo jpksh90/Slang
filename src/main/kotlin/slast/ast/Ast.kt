@@ -107,38 +107,34 @@ data class FieldAccess(val lhs: Expr, val rhs: Expr) : Expr()
 fun SlastNode.prettyPrint(tabStop: Int = 0): String {
     val indent = "  ".repeat(tabStop)
     return when (this) {
-        is BinaryExpr -> this.left.prettyPrint() + " " + this.left.prettyPrint()
-        is BoolExpr -> this.value.toString()
-        is FuncCallExpr -> this.target + "(" + this.args.joinToString(", ") { it.prettyPrint() } + ")"
-        is IfExpr -> "ifte(${this.condition.prettyPrint()},${this.condition.prettyPrint()},${this.thenExpr.prettyPrint()})"
-        is IntExpr -> this.value.toString()
-        is ParenExpr -> "(" + this.expr.prettyPrint() + ")"
+        is BinaryExpr -> "${left.prettyPrint()} ${op} ${right.prettyPrint()}"
+        is BoolExpr -> value.toString()
+        is FuncCallExpr -> "$target(${args.joinToString(", ") { it.prettyPrint() }})"
+        is IfExpr -> "if (${condition.prettyPrint()}) then ${thenExpr.prettyPrint()} else ${elseExpr.prettyPrint()}"
+        is IntExpr -> value.toString()
+        is ParenExpr -> "(${expr.prettyPrint()})"
         ReadInputExpr -> "readInput()"
-        is VarExpr -> this.name
-        is Program -> this.stmt.joinToString("\n") { it.prettyPrint() }
-        is AssignStmt -> indent + this.lhs.prettyPrint() + " = " + this.expr.prettyPrint() + ";"
-        is BlockStmt -> "{\n" + this.stmts.joinToString("\n") { it.prettyPrint(tabStop+1) }
-        is ExprStmt -> indent + this.expr.prettyPrint() + ";"
-        is FunImpureStmt -> indent + "fun ${this.name}( " + this.params.joinToString(", ") + ")\n" + "${indent}{\n" + this
-            .body
-            .prettyPrint(tabStop+1) + "$indent }"
+        is VarExpr -> name
+        is Program -> stmt.joinToString("\n") { it.prettyPrint() }
+        is AssignStmt -> "$indent${lhs.prettyPrint()} = ${expr.prettyPrint()};"
+        is BlockStmt -> "$indent{\n" + stmts.joinToString("\n") { it.prettyPrint(tabStop + 1) } + "\n$indent}"
+        is ExprStmt -> "$indent${expr.prettyPrint()};"
+        is FunImpureStmt -> "$indent fun $name(${params.joinToString(", ")}) {\n" + body.prettyPrint(tabStop + 1) + "\n$indent}"
         is NoneValue -> "None"
-        is FunPureStmt -> indent + "fun ${this.name}( " + this.params.joinToString(", ") + ")\n" + "=>" + this.body
-        is IfStmt ->  "${indent} if (${this.condition.prettyPrint()}) {\n" + thenBody.prettyPrint(tabStop+1) +
-                "$indent }\n" + "$indent else {" + this.elseBody.prettyPrint(tabStop+1) + "$indent }"
-        is LetStmt -> "${indent}let ${this.name} = ${this.expr.prettyPrint()};"
-        is PrintStmt -> indent + "print(" + this.args.joinToString(", ") { it.prettyPrint() } + ");"
-        is ReturnStmt -> indent + "return " + expr.prettyPrint() + ";"
-        is WhileStmt -> indent + "while (" + this.condition.prettyPrint() + ") {\n" + body.prettyPrint(tabStop+1) + "$indent }"
-        is Record -> "{\n" + this.expression.joinToString("\n") { indent + it.first + " : " + it.second.prettyPrint() }
-        is StringExpr -> this.value
-        is DerefExpr -> "deref(" + this.expr.prettyPrint() +')'
-        is RefExpr -> "ref(" + this.expr.prettyPrint() + ')'
-        is DerefStmt -> "deref(" + this.lhs.prettyPrint() + ") = " + this.rhs.prettyPrint() + ";"
+        is FunPureStmt -> "$indent fun $name(${params.joinToString(", ")}) => ${body.prettyPrint()}"
+        is IfStmt -> "$indent if (${condition.prettyPrint()}) {\n" + thenBody.prettyPrint(tabStop + 1) + "\n$indent} else {\n" + elseBody.prettyPrint(tabStop + 1) + "\n$indent}"
+        is LetStmt -> "$indent let $name = ${expr.prettyPrint()};"
+        is PrintStmt -> "$indent print(${args.joinToString(", ") { it.prettyPrint() }});"
+        is ReturnStmt -> "$indent return ${expr.prettyPrint()};"
+        is WhileStmt -> "$indent while (${condition.prettyPrint()}) {\n" + body.prettyPrint(tabStop + 1) + "\n$indent}"
+        is Record -> "$indent{\n" + expression.joinToString("\n") { "$indent  ${it.first} : ${it.second.prettyPrint()}" } + "\n$indent}"
+        is StringExpr -> "\"$value\""
+        is DerefExpr -> "deref(${expr.prettyPrint()})"
+        is RefExpr -> "ref(${expr.prettyPrint()})"
+        is DerefStmt -> "$indent deref(${lhs.prettyPrint()}) = ${rhs.prettyPrint()};"
         is FieldAccess -> "${lhs.prettyPrint()}.${rhs}"
     }
 }
-
 //fun ASTNode.isFunctionDeclaration(): Boolean {
 //    return when (this) {
 //        is FunPureStmt -> true

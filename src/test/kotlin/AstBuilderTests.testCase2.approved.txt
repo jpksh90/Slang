@@ -1,5 +1,4 @@
-fun factorial( n)
-=>IfExpr(condition=BinaryExpr(left=VarExpr(name=n), op===, right=IntExpr(value=0)), thenExpr=IntExpr(value=1), elseExpr=BinaryExpr(left=VarExpr(name=n), op=*, right=FuncCallExpr(target=factorial, args=[BinaryExpr(left=VarExpr(name=n), op=-, right=IntExpr(value=1))])))
-let num = readInput();
-let fact = factorial(num);
-print(fact);
+ fun factorial(n) => if (n == 0) then 1 else n * factorial(n - 1)
+ let num = readInput();
+ let fact = factorial(num);
+ print(fact);

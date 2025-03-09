@@ -1,1 +1,1 @@
-let x = true true;
+ let x = true + 1;
