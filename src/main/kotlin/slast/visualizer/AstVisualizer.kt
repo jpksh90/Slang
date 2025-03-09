@@ -93,6 +93,9 @@ class ASTViewer : JFrame("SimpleLang AST Visualizer") {
         defaultCloseOperation = EXIT_ON_CLOSE
         layout = BorderLayout()
 
+//        val iconUrl = javaClass.getResource("/icons/icon.png")
+//        this.iconImage = ImageIcon(iconUrl).image
+
         errorList.cellRenderer = ErrorListCellRenderer()
 
         val buttonPanel = JPanel(GridLayout(1, 2))
