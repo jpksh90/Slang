@@ -1,0 +1,35 @@
+<rsyntaxtextarea>
+    <syntaxstyle id="text/simplelang">
+        <rules>
+            <!-- Keywords -->
+            <keywords>
+                <keyword>let</keyword>
+                <keyword>var</keyword>
+                <keyword>if</keyword>
+                <keyword>else</keyword>
+                <keyword>while</keyword>
+                <keyword>return</keyword>
+                <keyword>print</keyword>
+            </keywords>
+
+            <!-- Operators -->
+            <operators>
+                <operator>=</operator>
+                <operator>+</operator>
+                <operator>-</operator>
+                <operator>*</operator>
+                <operator>/</operator>
+            </operators>
+
+            <!-- Comments -->
+            <comments>
+                <comment start="//" end="\n"/>
+            </comments>
+
+            <!-- Strings -->
+            <markups>
+                <markup start="\"" end="\"" escape="\\"/>
+            </markups>
+        </rules>
+    </syntaxstyle>
+</rsyntaxtextarea>
