@@ -15,10 +15,6 @@ stmt
     | 'return' expr ';' #returnStmt
     ;
 
-record
-    :
-    ;
-
 recordElems
     : ID ':' expr (',' ID ':' expr)*
     ;
