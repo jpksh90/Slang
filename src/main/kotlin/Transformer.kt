@@ -21,8 +21,6 @@ class StrictTypeChecker : SimpleLangBaseVisitor<Type>() {
 
     override fun visitVarExpr(ctx: SimpleLangParser.VarExprContext): Type {
         return Type.UNKNOWN
-        val id = ctx.ID().text
-        return symbolTable.getOrDefault(id, Type.UNKNOWN)
     }
 
     override fun visitArithmeticExpr(ctx: SimpleLangParser.ArithmeticExprContext): Type {

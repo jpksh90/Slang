@@ -1,4 +1,5 @@
-import slast.*
+import slast.ast.*
+import slast.ast.Record
 
 class SimpleLangToKotlin {
     fun generate(ast: SlastNode): String {
@@ -7,7 +8,7 @@ class SimpleLangToKotlin {
             is LetStmt -> "var ${ast.name} = ${generate(ast.expr)}"
             is AssignStmt -> "${generate(ast.lhs)} = ${generate(ast.expr)}"
             is IfStmt -> {
-                val elsePart = ast.elseBody?.let { " else { ${generate(it)} }" } ?: ""
+                val elsePart = ast.elseBody.let { " else { ${generate(it)} }" } ?: ""
                 "if (${generate(ast.condition)}) { ${generate(ast.thenBody)} }$elsePart"
             }
             is WhileStmt -> "while (${generate(ast.condition)}) { ${generate(ast.body)} }"
@@ -17,7 +18,21 @@ class SimpleLangToKotlin {
             is BoolExpr -> ast.value.toString()
             is VarExpr -> ast.name
             is BinaryExpr -> "(${generate(ast.left)} ${ast.op} ${generate(ast.right)})"
-            else -> throw IllegalArgumentException("Unknown AST node type")
+            is DerefExpr -> TODO()
+            is FieldAccess -> TODO()
+            is FuncCallExpr -> TODO()
+            is IfExpr -> TODO()
+            NoneValue -> TODO()
+            is ParenExpr -> TODO()
+            ReadInputExpr -> TODO()
+            is Record -> TODO()
+            is RefExpr -> TODO()
+            is StringExpr -> TODO()
+            is DerefStmt -> TODO()
+            is ExprStmt -> TODO()
+            is FunImpureStmt -> TODO()
+            is FunPureStmt -> TODO()
+            is ReturnStmt -> TODO()
         }
     }
 }

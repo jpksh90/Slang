@@ -1,6 +1,8 @@
 let a = readInput();
 let b = readInput();
-if a > b then
+if (a > b) {
     print(a);
-else
+ }
+else {
     print(b);
+}

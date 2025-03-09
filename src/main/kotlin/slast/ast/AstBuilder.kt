@@ -1,4 +1,4 @@
-package slast
+package slast.ast
 
 import SimpleLangBaseVisitor
 import SimpleLangLexer
@@ -6,10 +6,8 @@ import SimpleLangParser
 import org.antlr.v4.runtime.ANTLRInputStream
 import org.antlr.v4.runtime.CommonTokenStream
 import slast.visualizer.CustomErrorListener
-import javax.swing.DefaultListModel
-import javax.swing.SwingUtilities
 
-class ASTBuilder : SimpleLangBaseVisitor<SlastNode>() {
+class ASTBuilder() : SimpleLangBaseVisitor<SlastNode>() {
 
     override fun visitLetExpr(ctx: SimpleLangParser.LetExprContext): SlastNode {
         return LetStmt(ctx.ID().text, visit(ctx.expr()) as Expr)
@@ -74,7 +72,12 @@ class ASTBuilder : SimpleLangBaseVisitor<SlastNode>() {
 
     override fun visitFuncCallExpr(ctx: SimpleLangParser.FuncCallExprContext): SlastNode {
         val args = ctx.argList()?.expr()?.map { visit(it) as Expr } ?: emptyList()
-        return FuncCallExpr(visit(ctx.expr()) as Expr, args)
+        val target = visit(ctx.expr()) as Expr
+        if (target is VarExpr) {
+            return FuncCallExpr(target.name, args)
+        } else {
+            return FuncCallExpr("unresolved", args)
+        }
     }
 
     override fun visitArithmeticExpr(ctx: SimpleLangParser.ArithmeticExprContext): SlastNode {
@@ -157,19 +160,6 @@ class ASTBuilder : SimpleLangBaseVisitor<SlastNode>() {
     }
 
     override fun visitPrimaryExprWrapper(ctx: SimpleLangParser.PrimaryExprWrapperContext): SlastNode {
-        /*
-        primaryExpr
-    : INT                         # intExpr
-    | BOOL                        # boolExpr
-    | STRING                      # stringExpr
-    | ID                          # varExpr
-    | NONE                        # noneValue
-    | 'readInput' '(' ')'         # readInputExpr
-    | '{' recordElems? '}'        # recordExpr
-    | 'ref' '(' expr ')'          # refExpr
-    | '(' expr ')'                # parenExpr
-    | deref                       # derefExpr
-         */
         return visit(ctx.primaryExpr())
     }
 
@@ -184,8 +174,9 @@ class ASTBuilder : SimpleLangBaseVisitor<SlastNode>() {
 }
 
 fun main(args: Array<String>) {
-    val x = """let r = {a: {c: 7}, b: 5};
-        r.a.c = 15;
+    val x = """fun foo(a) => a;
+        let t = foo;
+        t("this is a string");
     """.trimMargin()
 
     fun parseProgram(input: String): SlastNode {

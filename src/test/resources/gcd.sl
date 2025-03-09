@@ -1,3 +1,3 @@
-fun mod(a, b) => ifte(a < b, a, mod(a-b, b));
+fun mod(a, b) => if (a < b) then a else mod(a-b, b);
 
-fun gcd(a, b) => ifte(b == 0, a, gcd(b, mod(a,b)));
+fun gcd(a, b) => if (b == 0) then a else gcd(b, mod(a,b));

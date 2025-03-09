@@ -1,4 +1,4 @@
-package slast
+package slast.ast
 
 interface ASTVisitor<T> {
     fun visitLetStmt(stmt: LetStmt): T

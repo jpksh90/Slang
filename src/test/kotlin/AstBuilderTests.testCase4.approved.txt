@@ -1,0 +1,7 @@
+let a = readInput();
+let b = readInput();
+ if (a a) {
+{
+    print(a); }
+ else {{
+    print(b); }

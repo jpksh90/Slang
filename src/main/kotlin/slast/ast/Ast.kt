@@ -1,4 +1,4 @@
-package slast
+package slast.ast
 
 import SimpleLangLexer
 import SimpleLangParser
@@ -93,7 +93,7 @@ data class IntExpr(val value: Int) : Expr()
 data class BoolExpr(val value: Boolean) : Expr()
 data class VarExpr(val name: String) : Expr()
 data object ReadInputExpr : Expr()
-data class FuncCallExpr(val target: Expr, val args: List<Expr>) : Expr()
+data class FuncCallExpr(val target: String, val args: List<Expr>) : Expr()
 data class BinaryExpr(val left: Expr, val op: String, val right: Expr) : Expr()
 data class IfExpr(val condition: Expr, val thenExpr: Expr, val elseExpr: Expr) : Expr()
 data class ParenExpr(val expr: Expr) : Expr()
@@ -109,7 +109,7 @@ fun SlastNode.prettyPrint(tabStop: Int = 0): String {
     return when (this) {
         is BinaryExpr -> this.left.prettyPrint() + " " + this.left.prettyPrint()
         is BoolExpr -> this.value.toString()
-        is FuncCallExpr -> this.target.prettyPrint() + "(" + this.args.joinToString(", ") { it.prettyPrint() } + ")"
+        is FuncCallExpr -> this.target + "(" + this.args.joinToString(", ") { it.prettyPrint() } + ")"
         is IfExpr -> "ifte(${this.condition.prettyPrint()},${this.condition.prettyPrint()},${this.thenExpr.prettyPrint()})"
         is IntExpr -> this.value.toString()
         is ParenExpr -> "(" + this.expr.prettyPrint() + ")"

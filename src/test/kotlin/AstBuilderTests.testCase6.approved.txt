@@ -1,0 +1,6 @@
+let x = 10;
+let y = 5;
+let sum = x x;
+let product = x x;
+print(sum);
+print(product);

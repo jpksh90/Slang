@@ -15,8 +15,7 @@ dependencies {
      antlr("org.antlr:antlr4:4.5") // use ANTLR version 4
     implementation("com.fifesoft:rsyntaxtextarea:3.3.3")
     implementation("com.formdev:flatlaf:3.5.4")
-
-
+    testImplementation("com.approvaltests:approvaltests:23.0.0")
 }
 
 tasks.test {

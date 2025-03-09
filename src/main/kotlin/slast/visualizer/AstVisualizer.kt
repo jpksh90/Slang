@@ -8,7 +8,8 @@ import org.antlr.v4.runtime.CommonTokenStream
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
 import org.fife.ui.rsyntaxtextarea.Theme
 import org.fife.ui.rtextarea.RTextScrollPane
-import slast.*
+import slast.ast.*
+import slast.ast.Record
 import java.awt.BorderLayout
 import java.awt.GridLayout
 import java.io.InputStream

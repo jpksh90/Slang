@@ -9,6 +9,6 @@ fun power(base, exp) {
     return result;
 }
 
-let base = readInput()
-let exp = readInput()
-print(power(base,exp))
+let base = readInput();
+let exp = readInput();
+print(power(base,exp));
