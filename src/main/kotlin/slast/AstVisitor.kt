@@ -24,6 +24,7 @@ interface ASTVisitor<T> {
     fun visitNoneValue(expr: NoneValue): T
 
     fun visitRecord(expr: Record): T
+    fun visitStringExpr(expr: StringExpr): T
 }
 
 

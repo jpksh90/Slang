@@ -13,11 +13,10 @@ stmt
     | 'if' '(' expr ')' ifStmt 'else' elseStmt #ifThenElseStmt
     | expr ';' # exprStmt
     | 'return' expr ';' #returnStmt
-    | 'record' ID '=' record ';' # recordStmt
     ;
 
 record
-    : '{' recordElems? '}'       # recordCreation
+    :
     ;
 
 recordElems
@@ -39,10 +38,10 @@ expr
     | expr op=('+'|'-'|'*'|'/') expr  # arithmeticExpr
     | expr op=('=='|'!='|'<'|'>') expr # comparisonExpr
     | expr op=('&&'|'||') expr    # booleanExpr
-    | 'ifte' '(' expr ',' expr ',' expr ')' # ifExpr
+    | 'if' '('  expr ')' 'then' expr 'else' expr # ifExpr
     | '(' expr ')'                # parenExpr
     | expr '.' ID                 # fieldAccessExpr
-    | record                    # recordExpr
+    | '{' recordElems? '}'       # recordExpr
     ;
 
 argList : expr (',' expr)* ;

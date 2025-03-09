@@ -1,4 +1,4 @@
-fun factorial(n) => ifte(n == 0, 1, n * factorial(n - 1));
+fun factorial(n) => if (n == 0) then 1 else n * factorial(n - 1);
 
 let num = readInput();
 let fact = factorial(num);

@@ -27,6 +27,8 @@ sealed class SlastNode {
             is Program -> visitor.visitProgram(this)
             is BlockStmt -> visitor.visitBlockStmt(this)
             is NoneValue -> visitor.visitNoneValue(this)
+            is Record -> visitor.visitRecord(this)
+            is StringExpr -> visitor.visitStringExpr(this)
         }
     }
 }
@@ -92,6 +94,7 @@ data class IfExpr(val condition: Expr, val thenExpr: Expr, val elseExpr: Expr) :
 data class ParenExpr(val expr: Expr) : Expr()
 data object NoneValue : Expr()
 data class Record(val expression: List<Pair<String, Expr>>) : Expr()
+data class StringExpr(val value: String) : Expr()
 
 fun SlastNode.prettyPrint(tabStop: Int = 0): String {
     val indent = "  ".repeat(tabStop)
@@ -119,6 +122,8 @@ fun SlastNode.prettyPrint(tabStop: Int = 0): String {
         is PrintStmt -> indent + "print(" + this.args.joinToString(", ") { it.prettyPrint() } + ");"
         is ReturnStmt -> indent + "return " + expr.prettyPrint() + ";"
         is WhileStmt -> indent + "while (" + this.condition.prettyPrint() + ") {\n" + body.prettyPrint(tabStop+1) + "$indent }"
+        is Record -> "{\n" + this.expression.joinToString("\n") { indent + it.first + " : " + it.second.prettyPrint() }
+        is StringExpr -> this.value
     }
 }
 
