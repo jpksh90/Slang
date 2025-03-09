@@ -5,7 +5,7 @@ class SimpleLangToKotlin {
         return when (ast) {
             is Program -> ast.stmt.joinToString("\n") { generate(it) }
             is LetStmt -> "var ${ast.name} = ${generate(ast.expr)}"
-            is AssignStmt -> "${ast.name} = ${generate(ast.expr)}"
+            is AssignStmt -> "${generate(ast.lhs)} = ${generate(ast.expr)}"
             is IfStmt -> {
                 val elsePart = ast.elseBody?.let { " else { ${generate(it)} }" } ?: ""
                 "if (${generate(ast.condition)}) { ${generate(ast.thenBody)} }$elsePart"

@@ -25,6 +25,11 @@ interface ASTVisitor<T> {
 
     fun visitRecord(expr: Record): T
     fun visitStringExpr(expr: StringExpr): T
+
+    fun visitRefExpr(expr: RefExpr): T
+    fun visitDerefExpr(expr: DerefExpr): T
+    fun visitDerefStmt(stmt: DerefStmt): T
+    fun visitFieldAccessExpr(expr: FieldAccess): T
 }
 
 

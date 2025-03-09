@@ -29,6 +29,10 @@ sealed class SlastNode {
             is NoneValue -> visitor.visitNoneValue(this)
             is Record -> visitor.visitRecord(this)
             is StringExpr -> visitor.visitStringExpr(this)
+            is DerefExpr -> visitor.visitDerefExpr(this)
+            is RefExpr -> visitor.visitRefExpr(this)
+            is DerefStmt -> visitor.visitDerefStmt(this)
+            is FieldAccess -> visitor.visitFieldAccessExpr(this)
         }
     }
 }
@@ -49,7 +53,7 @@ data class LetStmt(val name: String, val expr: Expr) : Stmt() {
     }
 }
 
-data class AssignStmt(val name: String, val expr: Expr) : Stmt() {
+data class AssignStmt(val lhs: Expr, val expr: Expr) : Stmt() {
     override fun <T> accept(visitor: ASTVisitor<T?>): T? {
         return expr.accept(visitor)
     }
@@ -81,6 +85,7 @@ data class IfStmt(val condition: Expr, val thenBody: BlockStmt, val elseBody: Bl
 data class ExprStmt(val expr: Expr) : Stmt()
 data class ReturnStmt(val expr: Expr) : Stmt()
 data class BlockStmt(val stmts: List<Stmt>) : Stmt()
+data class DerefStmt(val lhs: Expr, val rhs: Expr) : Stmt()
 
 // Expressions
 sealed class Expr : SlastNode()
@@ -88,27 +93,30 @@ data class IntExpr(val value: Int) : Expr()
 data class BoolExpr(val value: Boolean) : Expr()
 data class VarExpr(val name: String) : Expr()
 data object ReadInputExpr : Expr()
-data class FuncCallExpr(val name: String, val args: List<Expr>) : Expr()
+data class FuncCallExpr(val target: Expr, val args: List<Expr>) : Expr()
 data class BinaryExpr(val left: Expr, val op: String, val right: Expr) : Expr()
 data class IfExpr(val condition: Expr, val thenExpr: Expr, val elseExpr: Expr) : Expr()
 data class ParenExpr(val expr: Expr) : Expr()
 data object NoneValue : Expr()
 data class Record(val expression: List<Pair<String, Expr>>) : Expr()
 data class StringExpr(val value: String) : Expr()
+data class RefExpr(val expr: Expr) : Expr()
+data class DerefExpr(val expr: Expr) : Expr()
+data class FieldAccess(val lhs: Expr, val rhs: String) : Expr()
 
 fun SlastNode.prettyPrint(tabStop: Int = 0): String {
     val indent = "  ".repeat(tabStop)
     return when (this) {
         is BinaryExpr -> this.left.prettyPrint() + " " + this.left.prettyPrint()
         is BoolExpr -> this.value.toString()
-        is FuncCallExpr -> this.name + "(" + this.args.joinToString(", ") { it.prettyPrint() } + ")"
+        is FuncCallExpr -> this.target.prettyPrint() + "(" + this.args.joinToString(", ") { it.prettyPrint() } + ")"
         is IfExpr -> "ifte(${this.condition.prettyPrint()},${this.condition.prettyPrint()},${this.thenExpr.prettyPrint()})"
         is IntExpr -> this.value.toString()
         is ParenExpr -> "(" + this.expr.prettyPrint() + ")"
         ReadInputExpr -> "readInput()"
         is VarExpr -> this.name
         is Program -> this.stmt.joinToString("\n") { it.prettyPrint() }
-        is AssignStmt -> indent + this.name + " = " + this.expr.prettyPrint() + ";"
+        is AssignStmt -> indent + this.lhs.prettyPrint() + " = " + this.expr.prettyPrint() + ";"
         is BlockStmt -> "{\n" + this.stmts.joinToString("\n") { it.prettyPrint(tabStop+1) }
         is ExprStmt -> indent + this.expr.prettyPrint() + ";"
         is FunImpureStmt -> indent + "fun ${this.name}( " + this.params.joinToString(", ") + ")\n" + "${indent}{\n" + this
@@ -124,6 +132,10 @@ fun SlastNode.prettyPrint(tabStop: Int = 0): String {
         is WhileStmt -> indent + "while (" + this.condition.prettyPrint() + ") {\n" + body.prettyPrint(tabStop+1) + "$indent }"
         is Record -> "{\n" + this.expression.joinToString("\n") { indent + it.first + " : " + it.second.prettyPrint() }
         is StringExpr -> this.value
+        is DerefExpr -> "deref(" + this.expr.prettyPrint() +')'
+        is RefExpr -> "ref(" + this.expr.prettyPrint() + ')'
+        is DerefStmt -> "deref(" + this.lhs.prettyPrint() + ") = " + this.rhs.prettyPrint() + ";"
+        is FieldAccess -> "${lhs.prettyPrint()}.${rhs}"
     }
 }
 

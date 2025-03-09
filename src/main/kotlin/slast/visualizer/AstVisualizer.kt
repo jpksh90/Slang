@@ -5,15 +5,12 @@ import SimpleLangParser
 import slast.*
 import com.formdev.flatlaf.FlatDarculaLaf
 import org.antlr.v4.runtime.*
-import org.antlr.v4.runtime.Token
 import org.fife.ui.rsyntaxtextarea.*
 import org.fife.ui.rtextarea.RTextScrollPane
 import java.awt.*
 import java.io.InputStream
 import java.util.*
-import java.util.regex.Pattern
 import javax.swing.*
-import javax.swing.text.Segment
 import javax.swing.tree.DefaultMutableTreeNode
 
 
@@ -40,7 +37,7 @@ fun SlastNode.toTreeNode(): DefaultMutableTreeNode {
     return when (this) {
         is Program -> DefaultMutableTreeNode("Program").apply { stmt.forEach { add(it.toTreeNode()) } }
         is LetStmt -> DefaultMutableTreeNode("LetStmt(${name})").apply { add(expr.toTreeNode()) }
-        is AssignStmt -> DefaultMutableTreeNode("AssignStmt(${name})").apply { add(expr.toTreeNode()) }
+        is AssignStmt -> DefaultMutableTreeNode("AssignStmt").apply { add(lhs.toTreeNode()); add(expr.toTreeNode()) }
         is FunPureStmt -> DefaultMutableTreeNode("FunPure(${name})").apply {
             params.forEach { add(DefaultMutableTreeNode(it)) }
             add(body.toTreeNode())
@@ -66,7 +63,7 @@ fun SlastNode.toTreeNode(): DefaultMutableTreeNode {
         is BoolExpr -> DefaultMutableTreeNode("BoolExpr($value)")
         is VarExpr -> DefaultMutableTreeNode("VarExpr($name)")
         is ReadInputExpr -> DefaultMutableTreeNode("ReadInputExpr")
-        is FuncCallExpr -> DefaultMutableTreeNode("FuncCall(${name})").apply { args.forEach { add(it.toTreeNode()) } }
+        is FuncCallExpr -> DefaultMutableTreeNode("FuncCall(${target})").apply { args.forEach { add(it.toTreeNode()) } }
         is BinaryExpr -> DefaultMutableTreeNode("BinaryExpr($op)").apply { add(left.toTreeNode()); add(right.toTreeNode()) }
         is IfExpr -> DefaultMutableTreeNode("IfExpr").apply {
             add(condition.toTreeNode()); add(thenExpr.toTreeNode());
@@ -82,8 +79,13 @@ fun SlastNode.toTreeNode(): DefaultMutableTreeNode {
         }
 
         is StringExpr -> DefaultMutableTreeNode("StringExpr($value)")
+        is DerefExpr -> DefaultMutableTreeNode("DerefExpr(${expr.toTreeNode()})")
+        is RefExpr -> DefaultMutableTreeNode("RefExpr(${expr.toTreeNode()})")
+        is DerefStmt -> DefaultMutableTreeNode("DerefStmt").apply { add(lhs.toTreeNode()); add(rhs.toTreeNode()) }
+        is FieldAccess -> DefaultMutableTreeNode("FieldAccess").apply { add(lhs.toTreeNode()); add(DefaultMutableTreeNode(rhs)) }
     }
 }
+
 
 fun expandAllNodes(tree: JTree) {
     val rowCount = tree.rowCount
