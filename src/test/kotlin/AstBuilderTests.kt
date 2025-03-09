@@ -73,4 +73,13 @@ class AstBuilderTests {
             Approvals.verify(ast)
         }
     }
+
+    @Test
+    fun testCase7() {
+        val program = loadTestProgram("do-while.sl")
+        if (program != null) {
+            val ast = buildAst(program.readText())
+            Approvals.verify(ast)
+        }
+    }
 }

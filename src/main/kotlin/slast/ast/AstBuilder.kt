@@ -171,6 +171,16 @@ class ASTBuilder() : SimpleLangBaseVisitor<SlastNode>() {
         return FieldAccess(visit(ctx.expr()) as Expr, VarExpr(ctx.ID().text))
     }
 
+    override fun visitDoWhileStmt(ctx: SimpleLangParser.DoWhileStmtContext): SlastNode {
+        val body = visit(ctx.blockStmt()) as Stmt
+        val condition = visit(ctx.expr())
+        return BlockStmt(listOf(body, WhileStmt(condition as Expr, body as BlockStmt)))
+    }
+
+    override fun visitBlockStmt(ctx: SimpleLangParser.BlockStmtContext): SlastNode {
+            return BlockStmt(ctx.stmt().map { visit(it) as Stmt })
+    }
+
 }
 
 fun main(args: Array<String>) {

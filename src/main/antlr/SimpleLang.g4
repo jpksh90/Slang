@@ -13,6 +13,7 @@ stmt
     | 'if' '(' expr ')' ifStmt 'else' elseStmt #ifThenElseStmt
     | expr ';' # exprStmt
     | 'return' expr ';' #returnStmt
+    | 'do' blockStmt 'while' '(' expr ')' ';' #doWhileStmt
     ;
 
 recordElems
