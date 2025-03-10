@@ -15,7 +15,7 @@ class AstBuilderTests {
     fun buildAst(input: String): String {
         val lexer = SimpleLangLexer(ANTLRInputStream(input))
         val parser = SimpleLangParser(CommonTokenStream(lexer))
-        val tree = parser.prog()
+        val tree = parser.compilationUnit()
         val astBuilder = ASTBuilder()
         return astBuilder.visit(tree).prettyPrint()
     }

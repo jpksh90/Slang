@@ -4,7 +4,7 @@ import slast.ast.Record
 class SimpleLangToKotlin {
     fun generate(ast: SlastNode): String {
         return when (ast) {
-            is Program -> ast.stmt.joinToString("\n") { generate(it) }
+            is CompilationUnit -> ast.stmt.joinToString("\n") { generate(it) }
             is LetStmt -> "var ${ast.name} = ${generate(ast.expr)}"
             is AssignStmt -> "${generate(ast.lhs)} = ${generate(ast.expr)}"
             is IfStmt -> {

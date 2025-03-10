@@ -24,7 +24,7 @@ sealed class SlastNode {
             is BinaryExpr -> visitor.visitBinaryExpr(this)
             is IfExpr -> visitor.visitIfExpr(this)
             is ParenExpr -> visitor.visitParenExpr(this)
-            is Program -> visitor.visitProgram(this)
+            is CompilationUnit -> visitor.visitProgram(this)
             is BlockStmt -> visitor.visitBlockStmt(this)
             is NoneValue -> visitor.visitNoneValue(this)
             is Record -> visitor.visitRecord(this)
@@ -37,7 +37,7 @@ sealed class SlastNode {
     }
 }
 
-data class Program(val stmt: List<Stmt>) : SlastNode() {
+data class CompilationUnit(val stmt: List<Stmt>) : SlastNode() {
     fun collectFunctionDeclarations() : List<String> {
         val pureFunctions = stmt.filterIsInstance<FunPureStmt>().map { it.name }
         val impureFunctions = stmt.filterIsInstance<FunImpureStmt>().map { it.name }
@@ -115,7 +115,7 @@ fun SlastNode.prettyPrint(tabStop: Int = 0): String {
         is ParenExpr -> "(${expr.prettyPrint()})"
         ReadInputExpr -> "readInput()"
         is VarExpr -> name
-        is Program -> stmt.joinToString("\n") { it.prettyPrint() }
+        is CompilationUnit -> stmt.joinToString("\n") { it.prettyPrint() }
         is AssignStmt -> "$indent${lhs.prettyPrint()} = ${expr.prettyPrint()};"
         is BlockStmt -> "$indent{\n" + stmts.joinToString("\n") { it.prettyPrint(tabStop + 1) } + "\n$indent}"
         is ExprStmt -> "$indent${expr.prettyPrint()};"
@@ -164,9 +164,9 @@ fun main() {
     val tokens = CommonTokenStream(lexer)
     val parser = SimpleLangParser(tokens)
 
-    val parseTree = parser.prog()
+    val parseTree = parser.compilationUnit()
     val astBuilder = ASTBuilder()
-    val ast = astBuilder.visit(parseTree) as Program
+    val ast = astBuilder.visit(parseTree) as CompilationUnit
 //    print(ast.collectFunctionDeclarations())
     println(ast.prettyPrint())
 //    print(prettyPrintAST(ast))

@@ -1,6 +1,6 @@
 grammar SimpleLang;
 
-prog    : stmt* EOF ;
+compilationUnit    : stmt* EOF ;
 
 stmt
     : 'let' ID '=' expr ';'    # letExpr
@@ -36,7 +36,7 @@ expr
     ;
 
 primaryExpr
-    : NUMBER                         # intExpr
+    : NUMBER                      # intExpr
     | BOOL                        # boolExpr
     | STRING                      # stringExpr
     | ID                          # varExpr

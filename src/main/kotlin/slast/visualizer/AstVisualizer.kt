@@ -33,13 +33,13 @@ fun parseProgram(input: String, errorListModel: DefaultListModel<String>): Slast
     }
 
     val astBuilder = ASTBuilder()
-    val ast = astBuilder.visit(parseTree) as Program
+    val ast = astBuilder.visit(parseTree) as CompilationUnit
     return ast
 }
 
 fun SlastNode.toTreeNode(): DefaultMutableTreeNode {
     return when (this) {
-        is Program -> DefaultMutableTreeNode("Program").apply { stmt.forEach { add(it.toTreeNode()) } }
+        is CompilationUnit -> DefaultMutableTreeNode("Program").apply { stmt.forEach { add(it.toTreeNode()) } }
         is LetStmt -> DefaultMutableTreeNode("LetStmt(${this.prettyPrint()})").apply {
             add(DefaultMutableTreeNode("id=${name}"))
             add(expr.toTreeNode())

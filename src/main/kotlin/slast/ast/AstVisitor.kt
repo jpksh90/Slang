@@ -20,7 +20,7 @@ interface ASTVisitor<T> {
     fun visitBinaryExpr(expr: BinaryExpr): T
     fun visitIfExpr(expr: IfExpr): T
     fun visitParenExpr(expr: ParenExpr): T
-    fun visitProgram(program: Program): T
+    fun visitProgram(program: CompilationUnit): T
     fun visitNoneValue(expr: NoneValue): T
 
     fun visitRecord(expr: Record): T
@@ -56,7 +56,7 @@ abstract class BaseASTVisitor<T> : ASTVisitor<T> {
     override fun visitBinaryExpr(expr: BinaryExpr): T = defaultVisit()
     override fun visitIfExpr(expr: IfExpr): T = defaultVisit()
     override fun visitParenExpr(expr: ParenExpr): T = defaultVisit()
-    override fun visitProgram(program: Program): T = defaultVisit()
+    override fun visitProgram(program: CompilationUnit): T = defaultVisit()
     override fun visitNoneValue(expr: NoneValue): T = defaultVisit()
 
     override fun visitRecord(expr: Record): T = defaultVisit()

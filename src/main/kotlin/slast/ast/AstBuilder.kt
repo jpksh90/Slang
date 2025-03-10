@@ -113,9 +113,9 @@ class ASTBuilder() : SimpleLangBaseVisitor<SlastNode>() {
         return block
     }
 
-    override fun visitProg(ctx: SimpleLangParser.ProgContext): SlastNode {
+    override fun visitCompilationUnit(ctx: SimpleLangParser.CompilationUnitContext): SlastNode {
         val statements = ctx.stmt().map { visit(it) as Stmt }
-        return Program(statements)
+        return CompilationUnit(statements)
     }
 
     override fun visitNoneValue(ctx: SimpleLangParser.NoneValueContext): SlastNode {
@@ -196,10 +196,10 @@ fun main(args: Array<String>) {
         val errorListener = CustomErrorListener()
         parser.addErrorListener(errorListener)
 
-        val parseTree = parser.prog()
+        val parseTree = parser.compilationUnit()
 
         val astBuilder = ASTBuilder()
-        val ast = astBuilder.visit(parseTree) as Program
+        val ast = astBuilder.visit(parseTree) as CompilationUnit
         return ast
     }
 
