@@ -40,7 +40,7 @@ expr
     | expr '.' ID                                       # fieldAccessExpr
     | expr '(' argList? ')'                             # funcCallExpr
     | 'if' '(' expr ')' 'then' expr 'else' expr         # ifExpr
-    | expr op=('*' | '/') expr                          # arithmeticExpr
+    | expr op=('*' | '/' | '%') expr                          # arithmeticExpr
     | expr op=('+' | '-') expr                          # arithmeticExpr
     | expr op=('==' | '!=' | '<' | '>' | '<=' | '>=' ) expr            # comparisonExpr
     | expr op=('&&' | '||') expr                        # booleanExpr

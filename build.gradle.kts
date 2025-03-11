@@ -24,6 +24,9 @@ dependencies {
     implementation("org.yaml:snakeyaml:2.0")
     implementation("org.reflections:reflections:0.10.2")
 
+    implementation("org.ow2.asm:asm:9.6")
+    implementation("org.ow2.asm:asm-util:9.6") // Optional, for utilities
+
 }
 
 tasks.test {
