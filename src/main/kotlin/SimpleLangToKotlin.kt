@@ -8,7 +8,7 @@ class SimpleLangToKotlin {
             is LetStmt -> "var ${ast.name} = ${generate(ast.expr)}"
             is AssignStmt -> "${generate(ast.lhs)} = ${generate(ast.expr)}"
             is IfStmt -> {
-                val elsePart = ast.elseBody.let { " else { ${generate(it)} }" } ?: ""
+                val elsePart = ast.elseBody.let { " else { ${generate(it)} }" }
                 "if (${generate(ast.condition)}) { ${generate(ast.thenBody)} }$elsePart"
             }
             is WhileStmt -> "while (${generate(ast.condition)}) { ${generate(ast.body)} }"
@@ -37,7 +37,7 @@ class SimpleLangToKotlin {
     }
 }
 
-fun main(args: Array<String>) {
+fun main() {
 
 }
 

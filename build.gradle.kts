@@ -31,6 +31,10 @@ tasks.named("compileKotlin") {
     dependsOn("generateGrammarSource")
 }
 
+tasks.named("compileTestKotlin") {
+    dependsOn("generateTestGrammarSource")
+}
+
 
 kotlin {
     jvmToolchain(21)

@@ -74,7 +74,7 @@ fun main() {
     val lexer = SimpleLangLexer(inputStream)
     val tokenStream = CommonTokenStream(lexer)
     val parser = SimpleLangParser(tokenStream)
-    val tree = parser.prog()
+    val tree = parser.compilationUnit()
 
     try {
         val typeChecker = StrictTypeChecker()

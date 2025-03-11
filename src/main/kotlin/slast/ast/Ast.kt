@@ -37,6 +37,49 @@ sealed class SlastNode {
     }
 }
 
+enum class Operator {
+    PLUS, MINUS, TIMES, DIV, MOD, EQ, NEQ, LT, GT, LEQ, GEQ, AND, OR;
+
+    companion object {
+        fun fromValue(op: String): Operator {
+            return when (op) {
+                "+" -> PLUS
+                "-" -> MINUS
+                "*" -> TIMES
+                "/" -> DIV
+                "%" -> MOD
+                "==" -> EQ
+                "!=" -> NEQ
+                "<" -> LT
+                ">" -> GT
+                "<=" -> LEQ
+                ">=" -> GEQ
+                "&&" -> AND
+                "||" -> OR
+                else -> throw IllegalArgumentException("Unknown operator: $op")
+            }
+        }
+    }
+
+    override fun toString(): String {
+        return when (this) {
+            PLUS -> "+"
+            MINUS -> "-"
+            TIMES -> "*"
+            DIV -> "/"
+            MOD -> "%"
+            EQ -> "=="
+            NEQ -> "!="
+            LT -> "<"
+            GT -> ">"
+            LEQ -> "<="
+            GEQ -> ">="
+            AND -> "&&"
+            OR -> "||"
+        }
+    }
+}
+
 data class CompilationUnit(val stmt: List<Stmt>) : SlastNode() {
     fun collectFunctionDeclarations() : List<String> {
         val pureFunctions = stmt.filterIsInstance<FunPureStmt>().map { it.name }
@@ -94,7 +137,7 @@ data class BoolLiteral(val value: Boolean) : Expr()
 data class VarExpr(val name: String) : Expr()
 data object ReadInputExpr : Expr()
 data class FuncCallExpr(val target: String, val args: List<Expr>) : Expr()
-data class BinaryExpr(val left: Expr, val op: String, val right: Expr) : Expr()
+data class BinaryExpr(val left: Expr, val op: Operator, val right: Expr) : Expr()
 data class IfExpr(val condition: Expr, val thenExpr: Expr, val elseExpr: Expr) : Expr()
 data class ParenExpr(val expr: Expr) : Expr()
 data object NoneValue : Expr()

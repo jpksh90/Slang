@@ -81,15 +81,15 @@ class ASTBuilder() : SimpleLangBaseVisitor<SlastNode>() {
     }
 
     override fun visitArithmeticExpr(ctx: SimpleLangParser.ArithmeticExprContext): SlastNode {
-        return BinaryExpr(visit(ctx.expr(0)) as Expr, ctx.op.text, visit(ctx.expr(1)) as Expr)
+        return BinaryExpr(visit(ctx.expr(0)) as Expr, Operator.fromValue(ctx.op.text), visit(ctx.expr(1)) as Expr)
     }
 
     override fun visitComparisonExpr(ctx: SimpleLangParser.ComparisonExprContext): SlastNode {
-        return BinaryExpr(visit(ctx.expr(0)) as Expr, ctx.op.text, visit(ctx.expr(1)) as Expr)
+        return BinaryExpr(visit(ctx.expr(0)) as Expr, Operator.fromValue(ctx.op.text), visit(ctx.expr(1)) as Expr)
     }
 
     override fun visitBooleanExpr(ctx: SimpleLangParser.BooleanExprContext): SlastNode {
-        return BinaryExpr(visit(ctx.expr(0)) as Expr, ctx.op.text, visit(ctx.expr(1)) as Expr)
+        return BinaryExpr(visit(ctx.expr(0)) as Expr, Operator.fromValue(ctx.op.text), visit(ctx.expr(1)) as Expr)
     }
 
     override fun visitIfExpr(ctx: SimpleLangParser.IfExprContext): SlastNode {
@@ -183,7 +183,7 @@ class ASTBuilder() : SimpleLangBaseVisitor<SlastNode>() {
 
 }
 
-fun main(args: Array<String>) {
+fun main() {
     val x = """fun foo(a) => a;
         let t = foo;
         t("this is a string");

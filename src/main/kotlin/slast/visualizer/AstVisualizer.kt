@@ -25,7 +25,7 @@ fun parseProgram(input: String, errorListModel: DefaultListModel<String>): Slast
     val errorListener = CustomErrorListener()
     parser.addErrorListener(errorListener)
 
-    val parseTree = parser.prog()
+    val parseTree = parser.compilationUnit()
 
     SwingUtilities.invokeLater {
         errorListModel.clear()
@@ -197,9 +197,7 @@ class ASTViewer : JFrame("SimpleLang AST Visualizer") {
             val code = inputArea.text
             val ast = parseProgram(code, errorListModel)
             treePanel.removeAll()
-            if (ast != null) {
-                updateTree(ast)
-            }
+            updateTree(ast)
         }
 
         loadFileButton.addActionListener {
