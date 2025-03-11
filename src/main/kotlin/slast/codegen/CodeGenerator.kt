@@ -1,5 +1,10 @@
 package slast.codegen
+
+import com.sun.org.apache.bcel.internal.generic.ALOAD
+import com.sun.org.apache.bcel.internal.generic.INVOKESPECIAL
+import com.sun.org.apache.bcel.internal.generic.RETURN
 import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.MethodVisitor
 import org.objectweb.asm.Opcodes.*
 import org.objectweb.asm.Type
 import slast.ast.*
