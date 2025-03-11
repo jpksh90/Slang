@@ -1,5 +1,7 @@
 package slast.codegen
 
+import jdk.internal.org.objectweb.asm.Opcodes.DADD
+import jdk.internal.org.objectweb.asm.Opcodes.DSUB
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.MethodVisitor
 import org.objectweb.asm.Opcodes.*
@@ -36,8 +38,8 @@ class PureFunction(private val function: FunPureStmt) {
                 translateMethodBody(body.left)
                 translateMethodBody(body.right)
                 when (body.op) {
-                    "+" -> mv.visitInsn(DADD)
-                    "-" -> mv.visitInsn(DSUB)
+                    Operator.PLUS -> mv.visitInsn(DADD)
+                    Operator.MINUS -> mv.visitInsn(DSUB)
                     else -> TODO()
                 }
                 mv.visitMethodInsn(INVOKESTATIC, "java/lang/Double", "valueOf", "(D)Ljava/lang/Double;", false)
