@@ -1,12 +1,10 @@
 package slast.codegen
-
-import com.sun.org.apache.bcel.internal.generic.ALOAD
-import com.sun.org.apache.bcel.internal.generic.INVOKESPECIAL
-import com.sun.org.apache.bcel.internal.generic.RETURN
 import org.objectweb.asm.ClassWriter
-import org.objectweb.asm.MethodVisitor
 import org.objectweb.asm.Opcodes.*
+import org.objectweb.asm.Type
 import slast.ast.*
+
+const val VERSION_NUMBER = 54
 
 
 class CodeGenerator(compilationUnit: CompilationUnit) {
@@ -19,7 +17,7 @@ class CodeGenerator(compilationUnit: CompilationUnit) {
          */
         val className = "Record${expr.hashCode()}"
         val cw = ClassWriter(0)
-        cw.visit(52, ACC_PUBLIC + ACC_SUPER, className, null, "java/lang/Object", null)
+        cw.visit(VERSION_NUMBER, ACC_PUBLIC + ACC_SUPER, className, null, "java/lang/Object", null)
 
         val mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null)
         mv.visitCode()
@@ -42,5 +40,12 @@ class CodeGenerator(compilationUnit: CompilationUnit) {
     fun translateBooleanLiteral(literal: BoolLiteral) : Boolean {
         return literal.value
     }
+
+
+}
+
+fun main() {
+    val functionBody : Expr = BinaryExpr(VarExpr("a"), "+", VarExpr("b"))
+    val function = FunPureStmt("test", listOf("a", "b"), functionBody)
 
 }
