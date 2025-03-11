@@ -1,22 +1,18 @@
 package slast.codegen
 
-import jdk.internal.org.objectweb.asm.Opcodes.DADD
-import jdk.internal.org.objectweb.asm.Opcodes.DSUB
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.MethodVisitor
 import org.objectweb.asm.Opcodes.*
 import org.objectweb.asm.Type
 import slast.ast.*
-import slast.ast.Record
 import java.io.FileOutputStream
-
 
 
 class PureFunction(private val function: FunPureStmt) {
 
     private val argumentsToPosition = HashMap<String, Int>()
     private val className = function.name
-    private val cw = ClassWriter(0)
+    private val cw = ClassWriter(ClassWriter.COMPUTE_MAXS)
     private var mv : MethodVisitor
     private var stackLocCounter : Int = 0
 
@@ -40,10 +36,10 @@ class PureFunction(private val function: FunPureStmt) {
                 when (body.op) {
                     Operator.PLUS -> mv.visitInsn(DADD)
                     Operator.MINUS -> mv.visitInsn(DSUB)
+                    Operator.AND -> mv.visitInsn(IAND)
+                    Operator.DIV -> mv.visitInsn(DDIV)
                     else -> TODO()
                 }
-                mv.visitMethodInsn(INVOKESTATIC, "java/lang/Double", "valueOf", "(D)Ljava/lang/Double;", false)
-
             }
             is BoolLiteral -> mv.visitInsn(
                 when (body.value) {
@@ -96,6 +92,8 @@ class PureFunction(private val function: FunPureStmt) {
     fun translate()  {
         mv.visitCode()
         translateMethodBody(function.body)
+        mv.visitMaxs(8, 3)
+        mv.visitMethodInsn(INVOKESTATIC, "java/lang/Double", "valueOf", "(D)Ljava/lang/Double;", false)
         mv.visitInsn(ARETURN)
         mv.visitEnd()
         cw.visitEnd()
@@ -106,7 +104,11 @@ class PureFunction(private val function: FunPureStmt) {
 }
 
 fun main() {
-    val functionBody: Expr = BinaryExpr(VarExpr("a"), "+", BinaryExpr(VarExpr("b"), "-", NumberLiteral(1781.0)))
+    val functionBody: Expr = BinaryExpr(
+        VarExpr("a"), Operator.PLUS, BinaryExpr(
+            VarExpr("b"), Operator.MINUS, NumberLiteral(1781.0)
+        )
+    )
     val function = FunPureStmt("Test", listOf("a", "b"), functionBody)
     PureFunction(function).translate()
 }

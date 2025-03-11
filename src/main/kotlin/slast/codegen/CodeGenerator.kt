@@ -4,7 +4,7 @@ import org.objectweb.asm.Opcodes.*
 import org.objectweb.asm.Type
 import slast.ast.*
 
-const val VERSION_NUMBER = 54
+const val VERSION_NUMBER = 65
 
 
 class CodeGenerator(compilationUnit: CompilationUnit) {
@@ -45,7 +45,7 @@ class CodeGenerator(compilationUnit: CompilationUnit) {
 }
 
 fun main() {
-    val functionBody : Expr = BinaryExpr(VarExpr("a"), "+", VarExpr("b"))
+    val functionBody : Expr = BinaryExpr(VarExpr("a"), Operator.PLUS, VarExpr("b"))
     val function = FunPureStmt("test", listOf("a", "b"), functionBody)
 
 }
