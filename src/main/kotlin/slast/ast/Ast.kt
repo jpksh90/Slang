@@ -208,8 +208,8 @@ fun main() {
     val parser = SimpleLangParser(tokens)
 
     val parseTree = parser.compilationUnit()
-    val astBuilder = ASTBuilder()
-    val ast = astBuilder.visit(parseTree) as CompilationUnit
+    val IRBuilder = IRBuilder()
+    val ast = IRBuilder.visit(parseTree) as CompilationUnit
 //    print(ast.collectFunctionDeclarations())
     println(ast.prettyPrint())
 //    print(prettyPrintAST(ast))

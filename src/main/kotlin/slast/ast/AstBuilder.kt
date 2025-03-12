@@ -7,7 +7,7 @@ import org.antlr.v4.runtime.ANTLRInputStream
 import org.antlr.v4.runtime.CommonTokenStream
 import slast.visualizer.CustomErrorListener
 
-class ASTBuilder() : SimpleLangBaseVisitor<SlastNode>() {
+class IRBuilder() : SimpleLangBaseVisitor<SlastNode>() {
 
     override fun visitLetExpr(ctx: SimpleLangParser.LetExprContext): SlastNode {
         return LetStmt(ctx.ID().text, visit(ctx.expr()) as Expr)
@@ -198,8 +198,8 @@ fun main() {
 
         val parseTree = parser.compilationUnit()
 
-        val astBuilder = ASTBuilder()
-        val ast = astBuilder.visit(parseTree) as CompilationUnit
+        val IRBuilder = IRBuilder()
+        val ast = IRBuilder.visit(parseTree) as CompilationUnit
         return ast
     }
 
