@@ -34,7 +34,6 @@ class SimpleLangTokenMaker() : AbstractTokenMaker() {
     }
 
     override fun addToken(segment: Segment?, start: Int, end: Int, tokenType: Int, startOffset: Int) {
-        // This assumes all keywords, etc. were parsed as "identifiers."
         var tt = tokenType
         if (tt == Token.IDENTIFIER) {
             val value = wordsToHighlight[segment, start, end]
