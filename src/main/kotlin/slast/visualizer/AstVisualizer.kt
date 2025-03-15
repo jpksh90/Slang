@@ -1,7 +1,7 @@
 package slast.visualizer
 
-import SimpleLangLexer
-import SimpleLangParser
+import SlangLexer
+import SlangParser
 import com.formdev.flatlaf.FlatDarculaLaf
 import org.antlr.v4.runtime.ANTLRInputStream
 import org.antlr.v4.runtime.CommonTokenStream
@@ -26,7 +26,7 @@ import javax.swing.tree.DefaultMutableTreeNode
 
 
 fun parseProgram(input: String, errorListModel: DefaultListModel<String>): SlastNode {
-    val parser = SimpleLangParser(CommonTokenStream(SimpleLangLexer(ANTLRInputStream(input))))
+    val parser = SlangParser(CommonTokenStream(SlangLexer(ANTLRInputStream(input))))
 
     parser.removeErrorListeners()
     val errorListener = CustomErrorListener()
@@ -291,8 +291,8 @@ class ASTViewer : JFrame("Slang AST Visualizer") {
 
     private fun initializeEditor() {
         val atmf = TokenMakerFactory.getDefaultInstance() as AbstractTokenMakerFactory
-        atmf.putMapping("text/simplelang", "slast.visualizer.SimpleLangTokenMaker")
-        inputArea.syntaxEditingStyle = "text/simplelang"
+        atmf.putMapping("text/Slang", "slast.visualizer.SlangTokenMaker")
+        inputArea.syntaxEditingStyle = "text/Slang"
         errorList.cellRenderer = ErrorListCellRenderer()
     }
 
@@ -352,7 +352,7 @@ class ASTViewer : JFrame("Slang AST Visualizer") {
 
 fun main() {
     val props = Properties()
-    props["text/simplelang"] = "languages.simplelang"
+    props["text/Slang"] = "languages.Slang"
     FlatDarculaLaf.setup()
     SwingUtilities.invokeLater { ASTViewer().isVisible = true }
 }

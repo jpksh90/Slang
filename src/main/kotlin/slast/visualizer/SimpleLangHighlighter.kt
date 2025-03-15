@@ -7,7 +7,7 @@ import org.fife.ui.rsyntaxtextarea.TokenMap
 import javax.swing.text.Segment
 
 
-class SimpleLangTokenMaker() : AbstractTokenMaker() {
+class SlangTokenMaker() : AbstractTokenMaker() {
 
     private var currentTokenType : Int = Token.NULL
 

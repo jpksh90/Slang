@@ -1,6 +1,6 @@
 import slast.ast.*
 
-class SimpleLangToKotlin {
+class SlangToKotlin {
     fun generate(ast: SlastNode): String {
         return when (ast) {
             is CompilationUnit -> ast.stmt.joinToString("\n") { generate(it) }
@@ -53,6 +53,6 @@ fun main() {
 //        )
 //    )
 //
-//    val generator = SimpleLangToKotlin()
+//    val generator = SlangToKotlin()
 //    println(generator.generate(ast))
 //}

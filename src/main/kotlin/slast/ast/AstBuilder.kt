@@ -1,75 +1,75 @@
 package slast.ast
 
-import SimpleLangBaseVisitor
-import SimpleLangLexer
-import SimpleLangParser
+import SlangBaseVisitor
+import SlangLexer
+import SlangParser
 import org.antlr.v4.runtime.ANTLRInputStream
 import org.antlr.v4.runtime.CommonTokenStream
 
-class IRBuilder() : SimpleLangBaseVisitor<SlastNode>() {
+class IRBuilder() : SlangBaseVisitor<SlastNode>() {
 
-    override fun visitLetExpr(ctx: SimpleLangParser.LetExprContext): SlastNode {
+    override fun visitLetExpr(ctx: SlangParser.LetExprContext): SlastNode {
         return LetStmt(ctx.ID().text, visit(ctx.expr()) as Expr)
     }
 
-    override fun visitAssignExpr(ctx: SimpleLangParser.AssignExprContext): SlastNode {
+    override fun visitAssignExpr(ctx: SlangParser.AssignExprContext): SlastNode {
         return AssignStmt(visit(ctx.lhs()) as Expr, visit(ctx.expr()) as Expr)
     }
 
-    override fun visitFunPure(ctx: SimpleLangParser.FunPureContext): SlastNode {
+    override fun visitFunPure(ctx: SlangParser.FunPureContext): SlastNode {
         val params = ctx.paramList()?.ID()?.map { it.text } ?: emptyList()
         return FunPureStmt(ctx.ID().text, params, visit(ctx.expr()) as Expr)
     }
 
-    override fun visitFunImpure(ctx: SimpleLangParser.FunImpureContext): SlastNode {
+    override fun visitFunImpure(ctx: SlangParser.FunImpureContext): SlastNode {
         val params = ctx.paramList()?.ID()?.map { it.text } ?: emptyList()
         val body = ctx.stmt().map { visit(it) as Stmt }
         return FunImpureStmt(ctx.ID().text, params, BlockStmt(body))
     }
 
-    override fun visitWhileStmt(ctx: SimpleLangParser.WhileStmtContext): SlastNode {
+    override fun visitWhileStmt(ctx: SlangParser.WhileStmtContext): SlastNode {
         val condition = visit(ctx.expr()) as Expr
         val body = BlockStmt(ctx.blockStmt().stmt().map { visit(it) as Stmt })
         return WhileStmt(condition, body)
     }
 
-    override fun visitPrintStmt(ctx: SimpleLangParser.PrintStmtContext): SlastNode {
+    override fun visitPrintStmt(ctx: SlangParser.PrintStmtContext): SlastNode {
         val args = ctx.argList()?.expr()?.map { visit(it) as Expr } ?: emptyList()
         return PrintStmt(args)
     }
 
-    override fun visitIfThenElseStmt(ctx: SimpleLangParser.IfThenElseStmtContext): SlastNode {
+    override fun visitIfThenElseStmt(ctx: SlangParser.IfThenElseStmtContext): SlastNode {
         val condition = visit(ctx.expr()) as Expr
         val thenBody = BlockStmt(ctx.blockStmt(0).stmt().map { visit(it) as Stmt })
         val elseBody = BlockStmt(ctx.blockStmt(1).stmt().map { visit(it) as Stmt })
         return IfStmt(condition, thenBody, elseBody)
     }
 
-    override fun visitExprStmt(ctx: SimpleLangParser.ExprStmtContext): SlastNode {
+    override fun visitExprStmt(ctx: SlangParser.ExprStmtContext): SlastNode {
         return ExprStmt(visit(ctx.expr()) as Expr)
     }
 
-    override fun visitReturnStmt(ctx: SimpleLangParser.ReturnStmtContext): SlastNode {
+    override fun visitReturnStmt(ctx: SlangParser.ReturnStmtContext): SlastNode {
         return ReturnStmt(visit(ctx.expr()) as Expr)
     }
 
-    override fun visitIntExpr(ctx: SimpleLangParser.IntExprContext): SlastNode {
+    override fun visitIntExpr(ctx: SlangParser.IntExprContext): SlastNode {
         return NumberLiteral(ctx.NUMBER().text.toDouble())
     }
 
-    override fun visitBoolExpr(ctx: SimpleLangParser.BoolExprContext): SlastNode {
+    override fun visitBoolExpr(ctx: SlangParser.BoolExprContext): SlastNode {
         return BoolLiteral(ctx.BOOL().text.toBoolean())
     }
 
-    override fun visitVarExpr(ctx: SimpleLangParser.VarExprContext): SlastNode {
+    override fun visitVarExpr(ctx: SlangParser.VarExprContext): SlastNode {
         return VarExpr(ctx.ID().text)
     }
 
-    override fun visitReadInputExpr(ctx: SimpleLangParser.ReadInputExprContext): SlastNode {
+    override fun visitReadInputExpr(ctx: SlangParser.ReadInputExprContext): SlastNode {
         return ReadInputExpr
     }
 
-    override fun visitFuncCallExpr(ctx: SimpleLangParser.FuncCallExprContext): SlastNode {
+    override fun visitFuncCallExpr(ctx: SlangParser.FuncCallExprContext): SlastNode {
         val args = ctx.argList()?.expr()?.map { visit(it) as Expr } ?: emptyList()
         val target = visit(ctx.expr()) as Expr
         if (target is VarExpr) {
@@ -79,19 +79,19 @@ class IRBuilder() : SimpleLangBaseVisitor<SlastNode>() {
         }
     }
 
-    override fun visitArithmeticExpr(ctx: SimpleLangParser.ArithmeticExprContext): SlastNode {
+    override fun visitArithmeticExpr(ctx: SlangParser.ArithmeticExprContext): SlastNode {
         return BinaryExpr(visit(ctx.expr(0)) as Expr, Operator.fromValue(ctx.op.text), visit(ctx.expr(1)) as Expr)
     }
 
-    override fun visitComparisonExpr(ctx: SimpleLangParser.ComparisonExprContext): SlastNode {
+    override fun visitComparisonExpr(ctx: SlangParser.ComparisonExprContext): SlastNode {
         return BinaryExpr(visit(ctx.expr(0)) as Expr, Operator.fromValue(ctx.op.text), visit(ctx.expr(1)) as Expr)
     }
 
-    override fun visitBooleanExpr(ctx: SimpleLangParser.BooleanExprContext): SlastNode {
+    override fun visitBooleanExpr(ctx: SlangParser.BooleanExprContext): SlastNode {
         return BinaryExpr(visit(ctx.expr(0)) as Expr, Operator.fromValue(ctx.op.text), visit(ctx.expr(1)) as Expr)
     }
 
-    override fun visitIfExpr(ctx: SimpleLangParser.IfExprContext): SlastNode {
+    override fun visitIfExpr(ctx: SlangParser.IfExprContext): SlastNode {
         return IfExpr(
             visit(ctx.expr(0)) as Expr,
             visit(ctx.expr(1)) as Expr,
@@ -99,11 +99,11 @@ class IRBuilder() : SimpleLangBaseVisitor<SlastNode>() {
         )
     }
 
-    override fun visitParenExpr(ctx: SimpleLangParser.ParenExprContext): SlastNode {
+    override fun visitParenExpr(ctx: SlangParser.ParenExprContext): SlastNode {
         return ParenExpr(visit(ctx.expr()) as Expr)
     }
 
-    override fun visitForStmt(ctx: SimpleLangParser.ForStmtContext): SlastNode {
+    override fun visitForStmt(ctx: SlangParser.ForStmtContext): SlastNode {
         val initialization = AssignStmt(visit(ctx.ID()) as Expr, visit(ctx.expr(0)) as Expr)
         val condition = visit(ctx.expr(1)) as Expr
         val update = visit(ctx.expr(2)) as Stmt
@@ -112,7 +112,7 @@ class IRBuilder() : SimpleLangBaseVisitor<SlastNode>() {
         return block
     }
 
-    override fun visitCompilationUnit(ctx: SimpleLangParser.CompilationUnitContext): SlastNode {
+    override fun visitCompilationUnit(ctx: SlangParser.CompilationUnitContext): SlastNode {
         if (ctx.stmt() == null) {
             return CompilationUnit(emptyList())
         } else {
@@ -121,11 +121,11 @@ class IRBuilder() : SimpleLangBaseVisitor<SlastNode>() {
         }
     }
 
-    override fun visitNoneValue(ctx: SimpleLangParser.NoneValueContext): SlastNode {
+    override fun visitNoneValue(ctx: SlangParser.NoneValueContext): SlastNode {
         return NoneValue
     }
 
-    override fun visitRecordExpr(ctx: SimpleLangParser.RecordExprContext): SlastNode {
+    override fun visitRecordExpr(ctx: SlangParser.RecordExprContext): SlastNode {
         val recordIds = ctx.recordElems().ID()
         val recordExprs = ctx.recordElems().expr()
         val recordElementPairs = mutableListOf<Pair<String, Expr>>()
@@ -135,23 +135,23 @@ class IRBuilder() : SimpleLangBaseVisitor<SlastNode>() {
         return Record(recordElementPairs)
     }
 
-    override fun visitStringExpr(ctx: SimpleLangParser.StringExprContext): SlastNode {
+    override fun visitStringExpr(ctx: SlangParser.StringExprContext): SlastNode {
         return StringLiteral(ctx.STRING().text)
     }
 
-    override fun visitRefExpr(ctx: SimpleLangParser.RefExprContext): SlastNode {
+    override fun visitRefExpr(ctx: SlangParser.RefExprContext): SlastNode {
         return RefExpr(visit(ctx.expr()) as Expr)
     }
 
-    override fun visitDerefExpr(ctx: SimpleLangParser.DerefExprContext): SlastNode {
+    override fun visitDerefExpr(ctx: SlangParser.DerefExprContext): SlastNode {
         return DerefExpr(visit(ctx.deref()) as Expr)
     }
 
-    override fun visitDeref(ctx: SimpleLangParser.DerefContext): SlastNode {
+    override fun visitDeref(ctx: SlangParser.DerefContext): SlastNode {
         return visit(ctx.expr())
     }
 
-    override fun visitLhs(ctx: SimpleLangParser.LhsContext): SlastNode {
+    override fun visitLhs(ctx: SlangParser.LhsContext): SlastNode {
         if (ctx.deref() != null) {
             return DerefExpr(visit(ctx.deref()) as Expr)
         }
@@ -162,25 +162,25 @@ class IRBuilder() : SimpleLangBaseVisitor<SlastNode>() {
         return VarExpr(ctx.ID().text)
     }
 
-    override fun visitPrimaryExprWrapper(ctx: SimpleLangParser.PrimaryExprWrapperContext): SlastNode {
+    override fun visitPrimaryExprWrapper(ctx: SlangParser.PrimaryExprWrapperContext): SlastNode {
         return visit(ctx.primaryExpr())
     }
 
-    override fun visitFieldAccess(ctx: SimpleLangParser.FieldAccessContext): SlastNode {
+    override fun visitFieldAccess(ctx: SlangParser.FieldAccessContext): SlastNode {
         return FieldAccess(visit(ctx.expr()) as Expr, VarExpr(ctx.ID().text))
     }
 
-    override fun visitFieldAccessExpr(ctx: SimpleLangParser.FieldAccessExprContext): SlastNode {
+    override fun visitFieldAccessExpr(ctx: SlangParser.FieldAccessExprContext): SlastNode {
         return FieldAccess(visit(ctx.expr()) as Expr, VarExpr(ctx.ID().text))
     }
 
-    override fun visitDoWhileStmt(ctx: SimpleLangParser.DoWhileStmtContext): SlastNode {
+    override fun visitDoWhileStmt(ctx: SlangParser.DoWhileStmtContext): SlastNode {
         val body = visit(ctx.blockStmt()) as Stmt
         val condition = visit(ctx.expr())
         return BlockStmt(listOf(body, WhileStmt(condition as Expr, body as BlockStmt)))
     }
 
-    override fun visitBlockStmt(ctx: SimpleLangParser.BlockStmtContext): SlastNode {
+    override fun visitBlockStmt(ctx: SlangParser.BlockStmtContext): SlastNode {
             return BlockStmt(ctx.stmt().map { visit(it) as Stmt })
     }
 
@@ -190,7 +190,7 @@ fun main() {
     val x = "fun apply_n(f, n, x) => if (n == 0) then x else f(apply_n(f, n - 1, f(x)));".trimMargin()
 
     fun parseProgram(input: String): SlastNode {
-        val parser = SimpleLangParser(CommonTokenStream(SimpleLangLexer(ANTLRInputStream(input))))
+        val parser = SlangParser(CommonTokenStream(SlangLexer(ANTLRInputStream(input))))
 
         parser.removeErrorListeners()
         val errorListener = CustomErrorListener()
