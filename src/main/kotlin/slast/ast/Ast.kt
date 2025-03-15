@@ -2,7 +2,8 @@ package slast.ast
 
 import SimpleLangLexer
 import SimpleLangParser
-import org.antlr.v4.runtime.*
+import org.antlr.v4.runtime.ANTLRInputStream
+import org.antlr.v4.runtime.CommonTokenStream
 
 sealed class SlastNode {
     open fun<T> accept(visitor: ASTVisitor<T?>): T? {

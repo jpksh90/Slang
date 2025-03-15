@@ -1,5 +1,4 @@
 import slast.ast.*
-import slast.ast.Record
 
 class SimpleLangToKotlin {
     fun generate(ast: SlastNode): String {

@@ -12,6 +12,7 @@ import org.fife.ui.rsyntaxtextarea.TokenMakerFactory
 import org.fife.ui.rtextarea.RTextScrollPane
 import slast.ast.*
 import java.awt.BorderLayout
+import java.awt.Color
 import java.awt.GridLayout
 import java.awt.event.ActionEvent
 import java.awt.event.InputEvent
@@ -138,20 +139,25 @@ fun expandAllNodes(tree: JTree) {
 }
 
 class ASTViewer : JFrame("SimpleLang AST Visualizer") {
-    private val inputArea = RSyntaxTextArea(20, 30).apply {
+    private val inputArea = RSyntaxTextArea(30, 30).apply {
         isCodeFoldingEnabled = true
         tabSize = 4
         isBracketMatchingEnabled = true
         isAutoIndentEnabled = true
+
     }
 
 
     private val treePanel = JPanel(BorderLayout())
     private val splitPane: JSplitPane
 
-    private val parseButton = JButton("Parse")
-    private val loadFileButton = JButton("Open File")
-    private val saveFileButton = JButton("Save File")
+    private val parseButton = JButton("▶ Parse").apply {
+        foreground = Color.green
+    }
+    private val openFileButton = JButton("\uD83D\uDCC4 Open File")
+    private val saveFileButton = JButton("\uD83D\uDCBE Save File").apply {
+        foreground = Color.MAGENTA
+    }
 
     private val errorListModel = DefaultListModel<String>()
     private val errorList = JList(errorListModel)
@@ -159,6 +165,7 @@ class ASTViewer : JFrame("SimpleLang AST Visualizer") {
     private val statusBar = JPanel(BorderLayout())
     private val statusLabel = JLabel("Ready")
 
+    private val caretPositionLabel = JLabel("0:0")
 
 
     private val inputScrollPane = RTextScrollPane(inputArea).apply {
@@ -170,6 +177,7 @@ class ASTViewer : JFrame("SimpleLang AST Visualizer") {
     init {
         defaultCloseOperation = EXIT_ON_CLOSE
         layout = BorderLayout()
+        caretPositionLabel.horizontalTextPosition = SwingConstants.RIGHT
 
         initializeEditor()
 
@@ -177,12 +185,14 @@ class ASTViewer : JFrame("SimpleLang AST Visualizer") {
         val errorPanel = createErrorPanel()
 
         statusBar.add(statusLabel, BorderLayout.CENTER)
-
-        val inputPanel = JPanel(BorderLayout())
-        inputPanel.add(inputScrollPane, BorderLayout.CENTER)
-        inputPanel.add(buttonPanel, BorderLayout.NORTH)
-        inputPanel.add(errorPanel, BorderLayout.SOUTH)
-
+        val inputPanel = JPanel()
+        inputPanel.layout = BoxLayout(inputPanel, BoxLayout.Y_AXIS)
+        inputPanel.add(buttonPanel)
+        inputPanel.add(inputScrollPane)
+        inputPanel.add(caretPositionLabel).apply {
+            caretPositionLabel.horizontalAlignment = SwingConstants.RIGHT
+        }
+        inputPanel.add(errorPanel)
 
         val treeRoot = DefaultMutableTreeNode("AST will appear here")
         val tree = JTree(treeRoot)
@@ -210,7 +220,7 @@ class ASTViewer : JFrame("SimpleLang AST Visualizer") {
                 }
             })
 
-        loadFileButton.addActionListener {
+        openFileButton.addActionListener {
             val fileChooser = JFileChooser().apply {
                 dialogTitle = "Save SimpleLang File"
                 fileFilter = javax.swing.filechooser.FileNameExtensionFilter("SimpleLang Files (*.sl)", "sl")
@@ -237,7 +247,7 @@ class ASTViewer : JFrame("SimpleLang AST Visualizer") {
 
         }
 
-        loadFileButton.actionMap.put(
+        openFileButton.actionMap.put(
             KeyStroke.getKeyStroke(KeyEvent.VK_O, InputEvent.CTRL_DOWN_MASK),
             object : AbstractAction() {
                 override fun actionPerformed(e: ActionEvent?) {
@@ -252,6 +262,11 @@ class ASTViewer : JFrame("SimpleLang AST Visualizer") {
             }
         }
 
+        inputArea.addCaretListener {
+            updateCaretPosition()
+        }
+
+
         setSize(800, 600)
         setLocationRelativeTo(null)
     }
@@ -265,7 +280,7 @@ class ASTViewer : JFrame("SimpleLang AST Visualizer") {
 
     private fun createButtonPanel(): JPanel {
         val buttonPanel = JPanel(GridLayout(1, 2))
-        buttonPanel.add(loadFileButton)
+        buttonPanel.add(openFileButton)
         buttonPanel.add(parseButton)
         buttonPanel.add(saveFileButton)
         return buttonPanel
@@ -323,6 +338,13 @@ class ASTViewer : JFrame("SimpleLang AST Visualizer") {
         treePanel.add(JScrollPane(newTree), BorderLayout.CENTER)
         treePanel.revalidate()
         treePanel.repaint()
+    }
+
+    private fun updateCaretPosition() {
+        val caretPos: Int = inputArea.caretPosition
+        val line: Int = inputArea.document.defaultRootElement.getElementIndex(caretPos)
+        val column: Int = caretPos - inputArea.document.defaultRootElement.getElement(line).startOffset
+        caretPositionLabel.text = (line + 1).toString() + ":" + (column + 1)
     }
 }
 

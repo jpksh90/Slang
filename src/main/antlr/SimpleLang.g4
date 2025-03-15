@@ -1,6 +1,6 @@
 grammar SimpleLang;
 
-compilationUnit    : stmt* EOF ;
+compilationUnit  : stmt* EOF ;
 
 stmt
     : 'let' ID '=' expr ';'    # letExpr
