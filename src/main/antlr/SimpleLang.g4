@@ -67,5 +67,8 @@ NUMBER :  '-'?[0-9]+ ('.' [0-9]+)? ;
 
 STRING : '"' ( ~["\\] | '\\' . )* '"' ;
 
+COMMENT : '#' ~[\r\n]* -> skip ;
+
+MULTILINE_COMMENT : '(*' .*? '*)' -> skip ;
 
 WS : [ \t\r\n]+ -> skip ;

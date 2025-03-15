@@ -9,6 +9,8 @@ import javax.swing.text.Segment
 
 class SimpleLangTokenMaker() : AbstractTokenMaker() {
 
+    private var currentTokenType : Int = Token.NULL
+
     override fun getWordsToHighlight(): TokenMap {
         val tokenMap = TokenMap()
         tokenMap.put("let", Token.RESERVED_WORD);
@@ -33,24 +35,16 @@ class SimpleLangTokenMaker() : AbstractTokenMaker() {
 
     override fun addToken(segment: Segment?, start: Int, end: Int, tokenType: Int, startOffset: Int) {
         // This assumes all keywords, etc. were parsed as "identifiers."
-        var tokenType = tokenType
-        if (tokenType == Token.IDENTIFIER) {
+        var tt = tokenType
+        if (tt == Token.IDENTIFIER) {
             val value = wordsToHighlight[segment, start, end]
             if (value != -1) {
-                tokenType = value
+                tt = value
             }
         }
-        super.addToken(segment, start, end, tokenType, startOffset)
+        super.addToken(segment, start, end, tt, startOffset)
     }
 
-    /**
-     * Returns a list of tokens representing the given text.
-     *
-     * @param text The text to break into tokens.
-     * @param startTokenType The token with which to start tokenizing.
-     * @param startOffset The offset at which the line of tokens begins.
-     * @return A linked list of tokens representing `text`.
-     */
     override fun getTokenList(text: Segment, startTokenType: Int, startOffset: Int): Token {
         resetTokenList()
 
@@ -62,7 +56,10 @@ class SimpleLangTokenMaker() : AbstractTokenMaker() {
         val newStartOffset = startOffset - offset
 
         var currentTokenStart = offset
-        var currentTokenType = startTokenType
+
+        if (currentTokenType != Token.COMMENT_MULTILINE) {
+            currentTokenType = startTokenType
+        }
 
         var i = offset
         while (i < end) {
@@ -72,175 +69,69 @@ class SimpleLangTokenMaker() : AbstractTokenMaker() {
                 Token.NULL -> {
                     currentTokenStart = i // Starting a new token here.
 
-                    when (c) {
-                        ' ', '\t' -> currentTokenType = Token.WHITESPACE
-                        '"' -> currentTokenType = Token.LITERAL_STRING_DOUBLE_QUOTE
-                        '#' -> currentTokenType = Token.COMMENT_EOL
-                        else -> {
-                            if (RSyntaxUtilities.isDigit(c)) {
-                                currentTokenType = Token.LITERAL_NUMBER_DECIMAL_INT
-                                break
-                            } else if (RSyntaxUtilities.isLetter(c) || c == '/' || c == '_') {
-                                currentTokenType = Token.IDENTIFIER
-                                break
-                            }
-
-
-                            // Anything not currently handled - mark as an identifier
-                            currentTokenType = Token.IDENTIFIER
+                    currentTokenType = when {
+                        c.isWhitespace() -> Token.WHITESPACE
+                        c == '"' -> Token.LITERAL_STRING_DOUBLE_QUOTE
+                        c == '#' -> Token.COMMENT_EOL
+                        c == '(' && i + 1 < end && array[i + 1] == '*' -> {
+                            i++
+                            Token.COMMENT_MULTILINE
                         }
+                        c.isDigit() -> Token.LITERAL_NUMBER_DECIMAL_INT
+                        c.isLetter() || c == '/' || c == '_' -> Token.IDENTIFIER
+                        else -> Token.IDENTIFIER
                     }
                 }
 
-                Token.WHITESPACE -> when (c) {
-                    ' ', '\t' -> {}
-                    '"' -> {
-                        addToken(text, currentTokenStart, i - 1, Token.WHITESPACE, newStartOffset + currentTokenStart)
-                        currentTokenStart = i
-                        currentTokenType = Token.LITERAL_STRING_DOUBLE_QUOTE
-                    }
-
-                    '#' -> {
-                        addToken(text, currentTokenStart, i - 1, Token.WHITESPACE, newStartOffset + currentTokenStart)
-                        currentTokenStart = i
-                        currentTokenType = Token.COMMENT_EOL
-                    }
-
-                    else -> {
-                        addToken(text, currentTokenStart, i - 1, Token.WHITESPACE, newStartOffset + currentTokenStart)
-                        currentTokenStart = i
-
-                        if (RSyntaxUtilities.isDigit(c)) {
-                            currentTokenType = Token.LITERAL_NUMBER_DECIMAL_INT
-                            break
-                        } else if (RSyntaxUtilities.isLetter(c) || c == '/' || c == '_') {
-                            currentTokenType = Token.IDENTIFIER
-                            break
-                        }
-
-                        // Anything not currently handled - mark as identifier
-                        currentTokenType = Token.IDENTIFIER
-                    }
+                Token.WHITESPACE -> if (!c.isWhitespace()) {
+                    addToken(text, currentTokenStart, i - 1, Token.WHITESPACE, newStartOffset + currentTokenStart)
+                    currentTokenStart = i
+                    currentTokenType = Token.NULL
+                    continue
                 }
 
-                Token.IDENTIFIER -> when (c) {
-                    ' ', '\t' -> {
-                        addToken(text, currentTokenStart, i - 1, Token.IDENTIFIER, newStartOffset + currentTokenStart)
-                        currentTokenStart = i
-                        currentTokenType = Token.WHITESPACE
-                    }
-
-                    '"' -> {
-                        addToken(text, currentTokenStart, i - 1, Token.IDENTIFIER, newStartOffset + currentTokenStart)
-                        currentTokenStart = i
-                        currentTokenType = Token.LITERAL_STRING_DOUBLE_QUOTE
-                    }
-
-                    else -> if (RSyntaxUtilities.isLetterOrDigit(c) || c == '/' || c == '_') {
-                        break // Still an identifier of some type.
-                    }
-
+                Token.IDENTIFIER -> if (!c.isLetterOrDigit() && c != '/' && c != '_') {
+                    addToken(text, currentTokenStart, i - 1, Token.IDENTIFIER, newStartOffset + currentTokenStart)
+                    currentTokenStart = i
+                    currentTokenType = Token.NULL
+                    continue
                 }
 
-                Token.LITERAL_NUMBER_DECIMAL_INT -> when (c) {
-                    ' ', '\t' -> {
-                        addToken(
-                            text,
-                            currentTokenStart,
-                            i - 1,
-                            Token.LITERAL_NUMBER_DECIMAL_INT,
-                            newStartOffset + currentTokenStart
-                        )
-                        currentTokenStart = i
-                        currentTokenType = Token.WHITESPACE
-                    }
-
-                    '"' -> {
-                        addToken(
-                            text,
-                            currentTokenStart,
-                            i - 1,
-                            Token.LITERAL_NUMBER_DECIMAL_INT,
-                            newStartOffset + currentTokenStart
-                        )
-                        currentTokenStart = i
-                        currentTokenType = Token.LITERAL_STRING_DOUBLE_QUOTE
-                    }
-
-                    else -> {
-                        if (RSyntaxUtilities.isDigit(c)) {
-                            break // Still a literal number.
-                        }
-
-                        // Otherwise, remember this was a number and start over.
-                        addToken(
-                            text,
-                            currentTokenStart,
-                            i - 1,
-                            Token.LITERAL_NUMBER_DECIMAL_INT,
-                            newStartOffset + currentTokenStart
-                        )
-                        i--
-                        currentTokenType = Token.NULL
-                    }
+                Token.LITERAL_NUMBER_DECIMAL_INT -> if (!c.isDigit()) {
+                    addToken(text, currentTokenStart, i - 1, Token.LITERAL_NUMBER_DECIMAL_INT, newStartOffset + currentTokenStart)
+                    currentTokenStart = i
+                    currentTokenType = Token.NULL
+                    continue
                 }
 
                 Token.COMMENT_EOL -> {
                     i = end - 1
                     addToken(text, currentTokenStart, i, currentTokenType, newStartOffset + currentTokenStart)
-                    // We need to set token type to null so at the bottom we don't add one more token.
                     currentTokenType = Token.NULL
                 }
 
                 Token.LITERAL_STRING_DOUBLE_QUOTE -> if (c == '"') {
-                    addToken(
-                        text,
-                        currentTokenStart,
-                        i,
-                        Token.LITERAL_STRING_DOUBLE_QUOTE,
-                        newStartOffset + currentTokenStart
-                    )
+                    addToken(text, currentTokenStart, i, Token.LITERAL_STRING_DOUBLE_QUOTE, newStartOffset + currentTokenStart)
                     currentTokenType = Token.NULL
                 }
 
-                else -> when (c) {
-                    ' ', '\t' -> {
-                        addToken(text, currentTokenStart, i - 1, Token.IDENTIFIER, newStartOffset + currentTokenStart)
-                        currentTokenStart = i
-                        currentTokenType = Token.WHITESPACE
-                    }
-
-                    '"' -> {
-                        addToken(text, currentTokenStart, i - 1, Token.IDENTIFIER, newStartOffset + currentTokenStart)
-                        currentTokenStart = i
-                        currentTokenType = Token.LITERAL_STRING_DOUBLE_QUOTE
-                    }
-
-                    else -> if (RSyntaxUtilities.isLetterOrDigit(c) || c == '/' || c == '_') {
-                        break
-                    }
-
+                Token.COMMENT_MULTILINE -> if (c == '*' && i + 1 < end && array[i + 1] == ')') {
+                    i++
+                    addToken(text, currentTokenStart, i, Token.COMMENT_MULTILINE, newStartOffset + currentTokenStart)
+                    currentTokenType = Token.NULL
                 }
             }
             i++
         }
 
         when (currentTokenType) {
-            Token.LITERAL_STRING_DOUBLE_QUOTE -> addToken(
-                text,
-                currentTokenStart,
-                end - 1,
-                currentTokenType,
-                newStartOffset + currentTokenStart
-            )
-
+            Token.LITERAL_STRING_DOUBLE_QUOTE -> addToken(text, currentTokenStart, end - 1, currentTokenType, newStartOffset + currentTokenStart)
             Token.NULL -> addNullToken()
             else -> {
                 addToken(text, currentTokenStart, end - 1, currentTokenType, newStartOffset + currentTokenStart)
                 addNullToken()
             }
         }
-        // Return the first token in our linked list.
         return firstToken
     }
 }

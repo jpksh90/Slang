@@ -47,8 +47,8 @@
 
         <!-- Comments -->
         <comments>
-            <comment start="//" color="808080" italic="true"/>  <!-- Single-line comments -->
-            <comment start="/*" end="*/" color="808080" italic="true"/> <!-- Multi-line comments -->
+            <comment start="#" color="808080" italic="true"/>  <!-- Single-line comments -->
+            <comment start="(*" end="*)" color="808080" italic="true"/> <!-- Multi-line comments -->
         </comments>
     </tokens>
 </syntax>
