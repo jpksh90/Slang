@@ -132,7 +132,6 @@ fun expandAllNodes(tree: JTree) {
         i++
     }
 }
-//    private val inputArea = JTextArea(20, 30)
 
 class ASTViewer : JFrame("SimpleLang AST Visualizer") {
     private val inputArea = RSyntaxTextArea(20, 30).apply {
@@ -157,9 +156,6 @@ class ASTViewer : JFrame("SimpleLang AST Visualizer") {
     init {
         defaultCloseOperation = EXIT_ON_CLOSE
         layout = BorderLayout()
-
-//        val iconUrl = javaClass.getResource("/icons/icon.png")
-//        this.iconImage = ImageIcon(iconUrl).image
 
         errorList.cellRenderer = ErrorListCellRenderer()
 
