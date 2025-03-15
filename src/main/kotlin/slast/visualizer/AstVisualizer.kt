@@ -155,7 +155,7 @@ class ASTViewer : JFrame("Slang AST Visualizer") {
 
     private val splitPane: JSplitPane
 
-    private val parseButton = JButton("▶ Parse").apply {
+    private val parseButton = JButton("\uD83C\uDF33 Build AST").apply {
         foreground = Color(181, 205, 163)
     }
     private val openFileButton = JButton("\uD83D\uDCC4 Open File")
