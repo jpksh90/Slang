@@ -9,10 +9,7 @@ import org.slf4j.LoggerFactory
 import org.yaml.snakeyaml.DumperOptions
 import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.nodes.Tag
-import slast.ast.CompilationUnit
-import slast.ast.IRBuilder
-import slast.ast.SlastNode
-import slast.ast.prettyPrint
+import slast.ast.*
 import java.nio.file.Files
 import java.nio.file.Paths
 import kotlin.io.path.readText
@@ -73,7 +70,13 @@ class SimplerCLI : CliktCommand("simpler") {
 
         val lexer = SimpleLangLexer(ANTLRInputStream(fileContents))
         val parser = SimpleLangParser(CommonTokenStream(lexer))
+        val errorListener = CustomErrorListener()
+        parser.addErrorListener(errorListener)
         val parseTree = parser.compilationUnit()
+
+        for (error in errorListener.errors) {
+            println(error)
+        }
 
         if (stage == AST_OPT) {
             println(dumpAst(parseTree))

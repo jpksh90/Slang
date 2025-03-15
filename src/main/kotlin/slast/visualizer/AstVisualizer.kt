@@ -38,8 +38,8 @@ fun parseProgram(input: String, errorListModel: DefaultListModel<String>): Slast
         errorListModel.addAll(errorListener.errors)
     }
 
-    val IRBuilder = IRBuilder()
-    val ast = IRBuilder.visit(parseTree) as CompilationUnit
+    val irBuilder = IRBuilder()
+    val ast = irBuilder.visit(parseTree) as CompilationUnit
     return ast
 }
 
@@ -116,10 +116,8 @@ fun SlastNode.toTreeNode(): DefaultMutableTreeNode {
         is DerefExpr -> DefaultMutableTreeNode("DerefExpr(${expr.toTreeNode()})")
         is RefExpr -> DefaultMutableTreeNode("RefExpr(${expr.toTreeNode()})")
         is DerefStmt -> DefaultMutableTreeNode("DerefStmt(${this.prettyPrint()})").apply {
-            add(lhs.toTreeNode()); add(
-            rhs.toTreeNode
-                ()
-        )
+            add(lhs.toTreeNode())
+            add(rhs.toTreeNode())
         }
 
         is FieldAccess -> DefaultMutableTreeNode("FieldAccess(${this.prettyPrint()})").apply {
@@ -141,12 +139,12 @@ fun expandAllNodes(tree: JTree) {
 
 class ASTViewer : JFrame("SimpleLang AST Visualizer") {
     private val inputArea = RSyntaxTextArea(20, 30).apply {
-        syntaxEditingStyle = "text/simplelang"
         isCodeFoldingEnabled = true
         tabSize = 4
         isBracketMatchingEnabled = true
         isAutoIndentEnabled = true
     }
+
 
     private val treePanel = JPanel(BorderLayout())
     private val splitPane: JSplitPane
@@ -173,29 +171,17 @@ class ASTViewer : JFrame("SimpleLang AST Visualizer") {
         defaultCloseOperation = EXIT_ON_CLOSE
         layout = BorderLayout()
 
-        val atmf = TokenMakerFactory.getDefaultInstance() as AbstractTokenMakerFactory
-        atmf.putMapping("text/simplelang", "slast.visualizer.SimpleLangHighlighter")
+        initializeEditor()
 
-        inputArea.syntaxEditingStyle = "text/simplelang"
+        val buttonPanel = createButtonPanel()
+        val errorPanel = createErrorPanel()
 
-        errorList.cellRenderer = ErrorListCellRenderer()
-
-        val buttonPanel = JPanel(GridLayout(1, 2))
-        buttonPanel.add(loadFileButton)
-        buttonPanel.add(parseButton)
-        buttonPanel.add(saveFileButton)
-
-        val errorPanel = JPanel(BorderLayout())
-        errorPanel.border = BorderFactory.createTitledBorder("Compiler Errors")
-        errorPanel.add(JScrollPane(errorList), BorderLayout.CENTER)
-
-        statusBar.add(statusLabel, BorderLayout.EAST)
+        statusBar.add(statusLabel, BorderLayout.CENTER)
 
         val inputPanel = JPanel(BorderLayout())
         inputPanel.add(inputScrollPane, BorderLayout.CENTER)
         inputPanel.add(buttonPanel, BorderLayout.NORTH)
         inputPanel.add(errorPanel, BorderLayout.SOUTH)
-        inputPanel.add(statusBar, BorderLayout.SOUTH)
 
 
         val treeRoot = DefaultMutableTreeNode("AST will appear here")
@@ -205,13 +191,9 @@ class ASTViewer : JFrame("SimpleLang AST Visualizer") {
         splitPane = JSplitPane(JSplitPane.HORIZONTAL_SPLIT, inputPanel, treePanel)
         splitPane.resizeWeight = 0.5
         add(splitPane, BorderLayout.CENTER)
+        add(statusBar, BorderLayout.SOUTH)
 
-        val themeStream: InputStream? = {}.javaClass.classLoader.getResourceAsStream("themes/dark.xml")
-
-        if (themeStream != null) {
-            val theme = Theme.load(themeStream)
-            theme.apply(inputArea)
-        }
+        loadDarkTheme()
 
         parseButton.addActionListener {
             val code = inputArea.text
@@ -239,6 +221,7 @@ class ASTViewer : JFrame("SimpleLang AST Visualizer") {
                 val file = fileChooser.selectedFile
                 currentFile = file
                 try {
+                    statusLabel.text = file.name
                     val content = file.readText()
                     inputArea.text = content
                     title = "SimpleLang AST Visualizer - ${file.name}"
@@ -263,11 +246,46 @@ class ASTViewer : JFrame("SimpleLang AST Visualizer") {
             })
 
         saveFileButton.apply {
-            addActionListener { saveFile(inputArea) }
+            addActionListener {
+                saveFile(inputArea)
+                statusLabel.text = "Saved ${currentFile?.name}"
+            }
         }
 
         setSize(800, 600)
         setLocationRelativeTo(null)
+    }
+
+    private fun createErrorPanel(): JPanel {
+        val errorPanel = JPanel(BorderLayout())
+        errorPanel.border = BorderFactory.createTitledBorder("Compiler Errors")
+        errorPanel.add(JScrollPane(errorList), BorderLayout.CENTER)
+        return errorPanel
+    }
+
+    private fun createButtonPanel(): JPanel {
+        val buttonPanel = JPanel(GridLayout(1, 2))
+        buttonPanel.add(loadFileButton)
+        buttonPanel.add(parseButton)
+        buttonPanel.add(saveFileButton)
+        return buttonPanel
+    }
+
+    private fun initializeEditor() {
+        val atmf = TokenMakerFactory.getDefaultInstance() as AbstractTokenMakerFactory
+        atmf.putMapping("text/simplelang", "slast.visualizer.SimpleLangHighlighter")
+
+//        inputArea.syntaxEditingStyle = "text/simplelang"
+
+        errorList.cellRenderer = ErrorListCellRenderer()
+    }
+
+    private fun loadDarkTheme() {
+        val themeStream: InputStream? = {}.javaClass.classLoader.getResourceAsStream("themes/dark.xml")
+        if (themeStream != null) {
+            val theme = Theme.load(themeStream)
+            theme.apply(inputArea)
+        }
     }
 
     private fun saveFile(textArea: RSyntaxTextArea) {

@@ -82,4 +82,13 @@ class IRBuilderTests {
             Approvals.verify(ast)
         }
     }
+
+    @Test
+    fun testCase8() {
+        val program = loadTestProgram("apply.sl")
+        if (program != null) {
+            val ast = buildAst(program.readText())
+            Approvals.verify(ast)
+        }
+    }
 }

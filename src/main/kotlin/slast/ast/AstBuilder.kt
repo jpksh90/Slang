@@ -5,7 +5,6 @@ import SimpleLangLexer
 import SimpleLangParser
 import org.antlr.v4.runtime.ANTLRInputStream
 import org.antlr.v4.runtime.CommonTokenStream
-import slast.visualizer.CustomErrorListener
 
 class IRBuilder() : SimpleLangBaseVisitor<SlastNode>() {
 
@@ -184,10 +183,7 @@ class IRBuilder() : SimpleLangBaseVisitor<SlastNode>() {
 }
 
 fun main() {
-    val x = """fun foo(a) => a;
-        let t = foo;
-        t("this is a string");
-    """.trimMargin()
+    val x = "fun apply_n(f, n, x) => if (n == 0) then x else f(apply_n(f, n - 1, f(x)));".trimMargin()
 
     fun parseProgram(input: String): SlastNode {
         val parser = SimpleLangParser(CommonTokenStream(SimpleLangLexer(ANTLRInputStream(input))))
