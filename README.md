@@ -1,6 +1,6 @@
-# SimpleLang
+# Slang
 
-SimpleLang is a simple programming language designed for educational purposes. It features basic constructs such as variable declarations, function definitions, control flow statements, and expressions. The language is designed to be easy to understand and use, making it ideal for learning the fundamentals of programming languages and compilers.
+Slang is a simple programming language designed for educational purposes. It features basic constructs such as variable declarations, function definitions, control flow statements, and expressions. The language is designed to be easy to understand and use, making it ideal for learning the fundamentals of programming languages and compilers.
 
 ## Features
 
@@ -12,7 +12,7 @@ SimpleLang is a simple programming language designed for educational purposes. I
 
 ## Grammar
 
-The grammar for SimpleLang is defined using ANTLR and includes the following rules:
+The grammar for Slang is defined using ANTLR and includes the following rules:
 
 - **compilationUnit**: The root of the program, consisting of multiple statements.
 - **stmt**: Statements including variable declarations, assignments, function definitions, control flow, and expressions.
@@ -21,7 +21,7 @@ The grammar for SimpleLang is defined using ANTLR and includes the following rul
 
 ## Example
 
-Here is an example of a SimpleLang program:
+Here is an example of a Slang program:
 
 ```
 fun apply_n(f, n, x) => if (n == 0) then x else f(apply_n(f, n - 1, f(x)));
@@ -31,6 +31,6 @@ This program defines a higher-order function `apply_n` that applies a given func
 
 ## Project Structure
 
-- `src/main/antlr/SimpleLang.g4`: The ANTLR grammar file for SimpleLang.
+- `src/main/antlr/Slang.g4`: The ANTLR grammar file for Slang.
 - `src/main/kotlin/slast/ast/AstBuilder.kt`: The AST builder that constructs the abstract syntax tree from the parse tree.
-- `build/generated-src/antlr/main/SimpleLangParser.java`: The generated parser code.
+- `build/generated-src/antlr/main/SlangParser.java`: The generated parser code.
