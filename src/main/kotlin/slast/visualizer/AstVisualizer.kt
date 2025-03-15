@@ -138,8 +138,9 @@ fun expandAllNodes(tree: JTree) {
     }
 }
 
-class ASTViewer : JFrame("SimpleLang AST Visualizer") {
+class ASTViewer : JFrame("Slang AST Visualizer") {
     private val inputArea = RSyntaxTextArea(30, 30).apply {
+        syntaxEditingStyle = "text/kotlin"
         isCodeFoldingEnabled = true
         tabSize = 4
         isBracketMatchingEnabled = true
@@ -148,15 +149,18 @@ class ASTViewer : JFrame("SimpleLang AST Visualizer") {
     }
 
 
-    private val treePanel = JPanel(BorderLayout())
+    private val astPanel = JPanel(BorderLayout()).apply {
+        background = Color(41, 49, 52)
+    }
+
     private val splitPane: JSplitPane
 
     private val parseButton = JButton("▶ Parse").apply {
-        foreground = Color.green
+        foreground = Color(181, 205, 163)
     }
     private val openFileButton = JButton("\uD83D\uDCC4 Open File")
     private val saveFileButton = JButton("\uD83D\uDCBE Save File").apply {
-        foreground = Color.MAGENTA
+        foreground =  Color(255, 193, 204)
     }
 
     private val errorListModel = DefaultListModel<String>()
@@ -189,16 +193,15 @@ class ASTViewer : JFrame("SimpleLang AST Visualizer") {
         inputPanel.layout = BoxLayout(inputPanel, BoxLayout.Y_AXIS)
         inputPanel.add(buttonPanel)
         inputPanel.add(inputScrollPane)
-        inputPanel.add(caretPositionLabel).apply {
-            caretPositionLabel.horizontalAlignment = SwingConstants.RIGHT
-        }
+        inputPanel.add(Box.createHorizontalGlue())
+        inputPanel.add(caretPositionLabel)
         inputPanel.add(errorPanel)
 
         val treeRoot = DefaultMutableTreeNode("AST will appear here")
         val tree = JTree(treeRoot)
-        treePanel.add(JScrollPane(tree), BorderLayout.CENTER)
+        astPanel.add(JScrollPane(tree), BorderLayout.CENTER)
 
-        splitPane = JSplitPane(JSplitPane.HORIZONTAL_SPLIT, inputPanel, treePanel)
+        splitPane = JSplitPane(JSplitPane.HORIZONTAL_SPLIT, inputPanel, astPanel)
         splitPane.resizeWeight = 0.5
         add(splitPane, BorderLayout.CENTER)
         add(statusBar, BorderLayout.SOUTH)
@@ -208,7 +211,7 @@ class ASTViewer : JFrame("SimpleLang AST Visualizer") {
         parseButton.addActionListener {
             val code = inputArea.text
             val ast = parseProgram(code, errorListModel)
-            treePanel.removeAll()
+            astPanel.removeAll()
             updateTree(ast)
         }
         // Associate this with Ctrl/CMD + P
@@ -288,10 +291,8 @@ class ASTViewer : JFrame("SimpleLang AST Visualizer") {
 
     private fun initializeEditor() {
         val atmf = TokenMakerFactory.getDefaultInstance() as AbstractTokenMakerFactory
-        atmf.putMapping("text/simplelang", "slast.visualizer.SimpleLangHighlighter")
-
-//        inputArea.syntaxEditingStyle = "text/simplelang"
-
+        atmf.putMapping("text/simplelang", "slast.visualizer.SimpleLangTokenMaker")
+        inputArea.syntaxEditingStyle = "text/simplelang"
         errorList.cellRenderer = ErrorListCellRenderer()
     }
 
@@ -334,10 +335,10 @@ class ASTViewer : JFrame("SimpleLang AST Visualizer") {
         val newTree = JTree(root)
 //        newTree.cellRenderer = ASTTreeCellRenderer()
         expandAllNodes(newTree)
-        treePanel.removeAll()
-        treePanel.add(JScrollPane(newTree), BorderLayout.CENTER)
-        treePanel.revalidate()
-        treePanel.repaint()
+        astPanel.removeAll()
+        astPanel.add(JScrollPane(newTree), BorderLayout.CENTER)
+        astPanel.revalidate()
+        astPanel.repaint()
     }
 
     private fun updateCaretPosition() {
