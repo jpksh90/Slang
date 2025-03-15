@@ -3,6 +3,7 @@ package slast.visualizer
 import SimpleLangLexer
 import SimpleLangParser
 import com.formdev.flatlaf.FlatDarculaLaf
+import com.formdev.flatlaf.FlatIntelliJLaf
 import org.antlr.v4.runtime.ANTLRInputStream
 import org.antlr.v4.runtime.CommonTokenStream
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
@@ -12,6 +13,7 @@ import slast.ast.*
 import slast.ast.Record
 import java.awt.BorderLayout
 import java.awt.GridLayout
+import java.io.IOException
 import java.io.InputStream
 import java.util.*
 import javax.swing.*
@@ -141,10 +143,12 @@ class ASTViewer : JFrame("SimpleLang AST Visualizer") {
         isBracketMatchingEnabled = true
         isAutoIndentEnabled = true
     }
+
     private val parseButton = JButton("Parse")
     private val treePanel = JPanel(BorderLayout())
     private val splitPane: JSplitPane
     private val loadFileButton = JButton("Load File")
+    private val saveFileButton = JButton("Save File")
 
     private val errorListModel = DefaultListModel<String>()
     private val errorList = JList(errorListModel)
@@ -157,11 +161,14 @@ class ASTViewer : JFrame("SimpleLang AST Visualizer") {
         defaultCloseOperation = EXIT_ON_CLOSE
         layout = BorderLayout()
 
+        inputArea.syntaxEditingStyle = "text/simplelang"
+
         errorList.cellRenderer = ErrorListCellRenderer()
 
         val buttonPanel = JPanel(GridLayout(1, 2))
         buttonPanel.add(loadFileButton)
         buttonPanel.add(parseButton)
+        buttonPanel.add(saveFileButton)
 
         val errorPanel = JPanel(BorderLayout())
         errorPanel.border = BorderFactory.createTitledBorder("Compiler Errors")
@@ -197,7 +204,10 @@ class ASTViewer : JFrame("SimpleLang AST Visualizer") {
         }
 
         loadFileButton.addActionListener {
-            val fileChooser = JFileChooser()
+            val fileChooser = JFileChooser().apply {
+                dialogTitle = "Save SimpleLang File"
+                fileFilter = javax.swing.filechooser.FileNameExtensionFilter("SimpleLang Files (*.sl)", "sl")
+            }
             val returnValue = fileChooser.showOpenDialog(this)
 
             if (returnValue == JFileChooser.APPROVE_OPTION) {
@@ -216,8 +226,32 @@ class ASTViewer : JFrame("SimpleLang AST Visualizer") {
             }
         }
 
+        saveFileButton.apply {
+            addActionListener { saveFile(inputArea) }
+        }
+
         setSize(800, 600)
         setLocationRelativeTo(null)
+    }
+
+    private fun saveFile(textArea: RSyntaxTextArea) {
+        val fileChooser = JFileChooser().apply {
+            dialogTitle = "Save SimpleLang File"
+            fileFilter = javax.swing.filechooser.FileNameExtensionFilter("SimpleLang Files (*.sl)", "sl")
+        }
+
+        val result = fileChooser.showSaveDialog(null)
+        if (result == JFileChooser.APPROVE_OPTION) {
+            val file = fileChooser.selectedFile
+            val filePath = if (file.extension == "sl") file.absolutePath else "${file.absolutePath}.sl"
+
+            try {
+                file.writeText(textArea.text)
+                JOptionPane.showMessageDialog(null, "File saved: $filePath")
+            } catch (e: IOException) {
+                JOptionPane.showMessageDialog(null, "Error saving file: ${e.message}", "Error", JOptionPane.ERROR_MESSAGE)
+            }
+        }
     }
 
     private fun updateTree(ast: SlastNode) {

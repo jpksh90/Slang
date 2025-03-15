@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<syntax>
+    <properties>
+        <name>simplelang</name>
+        <fileExtensions>.sl</fileExtensions>
+        <ignoreCase>false</ignoreCase>
+    </properties>
+
+    <tokens>
+        <!-- Keywords -->
+        <keywords>
+            <keyword color="0000FF" bold="true">let</keyword>
+            <keyword color="0000FF" bold="true">fun</keyword>
+            <keyword color="0000FF" bold="true">while</keyword>
+            <keyword color="0000FF" bold="true">for</keyword>
+            <keyword color="0000FF" bold="true">if</keyword>
+            <keyword color="0000FF" bold="true">else</keyword>
+            <keyword color="0000FF" bold="true">return</keyword>
+            <keyword color="0000FF" bold="true">do</keyword>
+            <keyword color="0000FF" bold="true">None</keyword>
+        </keywords>
+
+        <!-- Identifiers -->
+        <identifier color="000000"/>
+
+        <!-- Literals -->
+        <literal>
+            <number color="FF0000"/>  <!-- Red numbers -->
+            <string color="008000"/>  <!-- Green strings -->
+            <boolean color="800080"/> <!-- Purple booleans -->
+        </literal>
+
+        <!-- Operators -->
+        <operators color="000000" bold="true">
+            <operator>=</operator>
+            <operator>+</operator>
+            <operator>-</operator>
+            <operator>*</operator>
+            <operator>/</operator>
+            <operator>&amp;&amp;</operator>
+            <operator>||</operator>
+            <operator>==</operator>
+            <operator>!=</operator>
+            <operator> &lt; </operator>
+            <operator>&gt;</operator>
+        </operators>
+
+        <!-- Comments -->
+        <comments>
+            <comment start="//" color="808080" italic="true"/>  <!-- Single-line comments -->
+            <comment start="/*" end="*/" color="808080" italic="true"/> <!-- Multi-line comments -->
+        </comments>
+    </tokens>
+</syntax>
