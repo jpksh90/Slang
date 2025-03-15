@@ -155,12 +155,11 @@ class ASTViewer : JFrame("Slang AST Visualizer") {
 
     private val splitPane: JSplitPane
 
-    private val parseButton = JButton("\uD83C\uDF33 Build AST").apply {
-        foreground = Color(181, 205, 163)
-    }
+    private val parseButton = JButton("\uD83C\uDF34 Build Syntax Tree")
     private val openFileButton = JButton("\uD83D\uDCC4 Open File")
-    private val saveFileButton = JButton("\uD83D\uDCBE Save File").apply {
-        foreground =  Color(255, 193, 204)
+    private val saveFileButton = JButton("\uD83D\uDCBE Save File")
+    private val runButton = JButton("\uD83D\uDE80 Run Program").apply {
+        isEnabled = false
     }
 
     private val errorListModel = DefaultListModel<String>()
@@ -286,6 +285,7 @@ class ASTViewer : JFrame("Slang AST Visualizer") {
         buttonPanel.add(openFileButton)
         buttonPanel.add(parseButton)
         buttonPanel.add(saveFileButton)
+        buttonPanel.add(runButton)
         return buttonPanel
     }
 
