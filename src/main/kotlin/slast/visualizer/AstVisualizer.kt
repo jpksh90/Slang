@@ -225,8 +225,8 @@ class ASTViewer : JFrame("Slang AST Visualizer") {
 
         openFileButton.addActionListener {
             val fileChooser = JFileChooser().apply {
-                dialogTitle = "Save SimpleLang File"
-                fileFilter = javax.swing.filechooser.FileNameExtensionFilter("SimpleLang Files (*.sl)", "sl")
+                dialogTitle = "Save Slang File"
+                fileFilter = javax.swing.filechooser.FileNameExtensionFilter("Slang Files (*.sl)", "sl")
             }
             val returnValue = fileChooser.showOpenDialog(this)
 
@@ -237,7 +237,7 @@ class ASTViewer : JFrame("Slang AST Visualizer") {
                     statusLabel.text = file.name
                     val content = file.readText()
                     inputArea.text = content
-                    title = "SimpleLang AST Visualizer - ${file.name}"
+                    title = "Slang AST Visualizer - ${file.name}"
                 } catch (e: Exception) {
                     JOptionPane.showMessageDialog(
                         this,
@@ -307,8 +307,8 @@ class ASTViewer : JFrame("Slang AST Visualizer") {
     private fun saveFile(textArea: RSyntaxTextArea) {
         if (currentFile == null) {
             val fileChooser = JFileChooser().apply {
-                dialogTitle = "Save SimpleLang File"
-                fileFilter = javax.swing.filechooser.FileNameExtensionFilter("SimpleLang Files (*.sl)", "sl")
+                dialogTitle = "Save Slang File"
+                fileFilter = javax.swing.filechooser.FileNameExtensionFilter("Slang Files (*.sl)", "sl")
             }
             val result = fileChooser.showSaveDialog(null)
 
