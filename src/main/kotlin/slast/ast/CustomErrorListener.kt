@@ -1,4 +1,4 @@
-package slast.visualizer
+package slast.ast
 
 import org.antlr.v4.runtime.BaseErrorListener
 import org.antlr.v4.runtime.RecognitionException
