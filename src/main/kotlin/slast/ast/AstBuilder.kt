@@ -113,8 +113,12 @@ class IRBuilder() : SimpleLangBaseVisitor<SlastNode>() {
     }
 
     override fun visitCompilationUnit(ctx: SimpleLangParser.CompilationUnitContext): SlastNode {
-        val statements = ctx.stmt().map { visit(it) as Stmt }
-        return CompilationUnit(statements)
+        if (ctx.stmt() == null) {
+            return CompilationUnit(emptyList())
+        } else {
+            val statements = ctx.stmt().map { visit(it) as Stmt }
+            return CompilationUnit(statements)
+        }
     }
 
     override fun visitNoneValue(ctx: SimpleLangParser.NoneValueContext): SlastNode {
