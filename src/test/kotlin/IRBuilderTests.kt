@@ -13,8 +13,8 @@ class IRBuilderTests {
     }
 
     fun buildAst(input: String): String {
-        val lexer = SimpleLangLexer(ANTLRInputStream(input))
-        val parser = SimpleLangParser(CommonTokenStream(lexer))
+        val lexer = SlangLexer(ANTLRInputStream(input))
+        val parser = SlangParser(CommonTokenStream(lexer))
         val tree = parser.compilationUnit()
         val IRBuilder = IRBuilder()
         return IRBuilder.visit(tree).prettyPrint()

@@ -26,7 +26,7 @@ private const val AST_OPT = "ast"
 
 private const val IR_OPT = "ir"
 
-class SimplerCLI : CliktCommand("simpler") {
+class SlangcCLI : CliktCommand("slangc") {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -39,7 +39,7 @@ class SimplerCLI : CliktCommand("simpler") {
         versionOption("1.0")
     }
 
-    private fun dumpAst(tree: SimpleLangParser.CompilationUnitContext) : String {
+    private fun dumpAst(tree: SlangParser.CompilationUnitContext) : String {
         val dumperOptions = DumperOptions().apply {
             defaultFlowStyle = DumperOptions.FlowStyle.BLOCK
             isPrettyFlow = true
@@ -74,8 +74,8 @@ class SimplerCLI : CliktCommand("simpler") {
 
         val fileContents = file.readText()
 
-        val lexer = SimpleLangLexer(ANTLRInputStream(fileContents))
-        val parser = SimpleLangParser(CommonTokenStream(lexer))
+        val lexer = SlangLexer(ANTLRInputStream(fileContents))
+        val parser = SlangParser(CommonTokenStream(lexer))
         val errorListener = CustomErrorListener()
         parser.addErrorListener(errorListener)
         val parseTree = parser.compilationUnit()
@@ -101,4 +101,4 @@ class SimplerCLI : CliktCommand("simpler") {
     }
 }
 
-fun main(args: Array<String>) = SimplerCLI().main(args)
+fun main(args: Array<String>) = SlangcCLI().main(args)

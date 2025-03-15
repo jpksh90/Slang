@@ -1,7 +1,7 @@
 package slast.ast
 
-import SimpleLangLexer
-import SimpleLangParser
+import SlangLexer
+import SlangParser
 import org.antlr.v4.runtime.ANTLRInputStream
 import org.antlr.v4.runtime.CommonTokenStream
 
@@ -204,9 +204,9 @@ fun main() {
         let x = true;
     """.trimIndent()
     val inputStream = ANTLRInputStream(inputCode)
-    val lexer = SimpleLangLexer(inputStream)
+    val lexer = SlangLexer(inputStream)
     val tokens = CommonTokenStream(lexer)
-    val parser = SimpleLangParser(tokens)
+    val parser = SlangParser(tokens)
 
     val parseTree = parser.compilationUnit()
     val IRBuilder = IRBuilder()
@@ -237,15 +237,15 @@ fun main() {
 //        let x = true;
 //    """.trimIndent()
 //    val inputStream = ANTLRInputStream(inputCode)
-//    val lexer = SimpleLangLexer(inputStream)
+//    val lexer = SlangLexer(inputStream)
 //    val tokens = CommonTokenStream(lexer)
-//    val parser = SimpleLangParser(tokens)
+//    val parser = SlangParser(tokens)
 //
 //    val parseTree = parser.prog()
 //    val astBuilder = ASTBuilder()
 //    val ast = astBuilder.visit(parseTree) as Program
 //
-//    val generator = SimpleLangToKotlin()
+//    val generator = SlangToKotlin()
 //    println(generator.generate(ast))
 //}
 

@@ -6,24 +6,24 @@ enum class Type {
 }
 
 
-class StrictTypeChecker : SimpleLangBaseVisitor<Type>() {
+class StrictTypeChecker : SlangBaseVisitor<Type>() {
 
     private val symbolTable = mutableMapOf<String, Type>()
 
 
-    override fun visitIntExpr(ctx: SimpleLangParser.IntExprContext): Type {
+    override fun visitIntExpr(ctx: SlangParser.IntExprContext): Type {
         return Type.INT
     }
 
-    override fun visitBoolExpr(ctx: SimpleLangParser.BoolExprContext): Type {
+    override fun visitBoolExpr(ctx: SlangParser.BoolExprContext): Type {
         return Type.BOOL
     }
 
-    override fun visitVarExpr(ctx: SimpleLangParser.VarExprContext): Type {
+    override fun visitVarExpr(ctx: SlangParser.VarExprContext): Type {
         return Type.UNKNOWN
     }
 
-    override fun visitArithmeticExpr(ctx: SimpleLangParser.ArithmeticExprContext): Type {
+    override fun visitArithmeticExpr(ctx: SlangParser.ArithmeticExprContext): Type {
         val leftType = visit(ctx.expr(0))
         val rightType = visit(ctx.expr(1))
 
@@ -36,18 +36,18 @@ class StrictTypeChecker : SimpleLangBaseVisitor<Type>() {
         return Type.INT
     }
 
-    override fun visitBooleanExpr(ctx: SimpleLangParser.BooleanExprContext) = Type.BOOL
+    override fun visitBooleanExpr(ctx: SlangParser.BooleanExprContext) = Type.BOOL
 
-    override fun visitComparisonExpr(ctx: SimpleLangParser.ComparisonExprContext): Type = Type.BOOL
+    override fun visitComparisonExpr(ctx: SlangParser.ComparisonExprContext): Type = Type.BOOL
 
-    override fun visitLetExpr(ctx: SimpleLangParser.LetExprContext): Type {
+    override fun visitLetExpr(ctx: SlangParser.LetExprContext): Type {
         val id = ctx.ID()
         val exprType = visit(ctx.expr())
         symbolTable[id.text] = exprType
         return Type.UNIT
     }
 
-    override fun visitReadInputExpr(ctx: SimpleLangParser.ReadInputExprContext?): Type {
+    override fun visitReadInputExpr(ctx: SlangParser.ReadInputExprContext?): Type {
         return Type.UNKNOWN
     }
 }
@@ -71,9 +71,9 @@ fun main() {
    """.trimIndent()
 
     val inputStream = ANTLRInputStream(program)
-    val lexer = SimpleLangLexer(inputStream)
+    val lexer = SlangLexer(inputStream)
     val tokenStream = CommonTokenStream(lexer)
-    val parser = SimpleLangParser(tokenStream)
+    val parser = SlangParser(tokenStream)
     val tree = parser.compilationUnit()
 
     try {

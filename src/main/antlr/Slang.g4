@@ -1,4 +1,4 @@
-grammar SimpleLang;
+grammar Slang;
 
 compilationUnit  : stmt* EOF ;
 
