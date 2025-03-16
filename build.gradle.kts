@@ -11,7 +11,6 @@ repositories {
     mavenCentral()
 }
 
-
 dependencies {
     testImplementation(kotlin("test"))
     antlr("org.antlr:antlr4:4.5")
@@ -20,7 +19,6 @@ dependencies {
     testImplementation("com.approvaltests:approvaltests:23.0.0")
     implementation("org.ow2.asm:asm:9.6")
     implementation("org.ow2.asm:asm-util:9.6") // Optional, for utilities
-
     implementation("com.github.ajalt.clikt:clikt:5.0.3")
     implementation("org.slf4j:slf4j-api:2.0.12")
     implementation("ch.qos.logback:logback-classic:1.5.0")
