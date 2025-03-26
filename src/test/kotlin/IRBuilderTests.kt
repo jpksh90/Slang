@@ -1,23 +1,23 @@
 import org.antlr.v4.runtime.ANTLRInputStream
 import org.antlr.v4.runtime.CommonTokenStream
 import org.approvaltests.Approvals
-import slast.ast.ASTBuilder
+import slast.ast.IRBuilder
 import slast.ast.prettyPrint
 import java.net.URL
 import kotlin.test.Test
 
-class AstBuilderTests {
+class IRBuilderTests {
 
     fun loadTestProgram(name: String): URL? {
-        return AstBuilderTests::class.java.getResource("/$name")
+        return IRBuilderTests::class.java.getResource("/$name")
     }
 
     fun buildAst(input: String): String {
         val lexer = SimpleLangLexer(ANTLRInputStream(input))
         val parser = SimpleLangParser(CommonTokenStream(lexer))
         val tree = parser.compilationUnit()
-        val astBuilder = ASTBuilder()
-        return astBuilder.visit(tree).prettyPrint()
+        val IRBuilder = IRBuilder()
+        return IRBuilder.visit(tree).prettyPrint()
     }
 
     @Test
