@@ -239,7 +239,7 @@ fun main() {
     val parser = SlangParser(tokens)
 
     val parseTree = parser.compilationUnit()
-    val IRBuilder = SlastBuilder.IRBuilder()
+    val IRBuilder = IRBuilder()
     val ast = IRBuilder.visit(parseTree) as CompilationUnit
 //    print(ast.collectFunctionDeclarations())
     println(ast.prettyPrint())

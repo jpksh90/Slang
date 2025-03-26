@@ -1,19 +1,23 @@
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.main
 import com.github.ajalt.clikt.parameters.arguments.argument
-import com.github.ajalt.clikt.parameters.options.default
-import com.github.ajalt.clikt.parameters.options.flag
-import com.github.ajalt.clikt.parameters.options.option
-import com.github.ajalt.clikt.parameters.options.versionOption
+import com.github.ajalt.clikt.parameters.options.*
 import com.github.ajalt.clikt.parameters.types.choice
+import org.antlr.v4.runtime.ANTLRInputStream
+import org.antlr.v4.runtime.CommonTokenStream
 import org.slf4j.LoggerFactory
 import org.yaml.snakeyaml.DumperOptions
 import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.nodes.Tag
+import slast.ast.CompilationUnit
+import slast.ast.IRBuilder
+import slast.ast.SlastNode
+import slast.ast.prettyPrint
 import slang.parser.FileParserInterface
 import slang.slast.*
 import java.nio.file.Files
 import java.nio.file.Paths
+import kotlin.io.path.readText
 
 private const val BYTECODE_OPT = "bytecode"
 
@@ -69,7 +73,7 @@ class SlangcCLI : CliktCommand("slangc") {
 
         val parser = FileParserInterface(file.toFile())
         val parseTree = parser.parse()
-        
+
         if (parseTree.not()) {
             logger.error("Failed to parse the input file")
             for (error in parser.getErrors()) {
@@ -79,10 +83,11 @@ class SlangcCLI : CliktCommand("slangc") {
         }
 
         if (stage == AST_OPT) {
-            println(dumpAst(parser.compilationUnit))
+            println(dumpAst(parseTree))
         }
 
-        val irTree = SlastBuilder(parser.compilationUnit).compilationUnit
+        val irBuilder = IRBuilder()
+        val irTree = irBuilder.visit(parseTree)
         if (stage == IR_OPT) {
            println(irTree.prettyPrint())
         }

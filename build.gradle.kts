@@ -22,6 +22,11 @@ dependencies {
     implementation("org.slf4j:slf4j-api:2.0.12")
     implementation("ch.qos.logback:logback-classic:1.5.0")
     implementation("org.yaml:snakeyaml:2.0")
+
+    implementation("com.github.ajalt.clikt:clikt:5.0.3")
+    implementation("org.slf4j:slf4j-api:2.0.12")
+    implementation("ch.qos.logback:logback-classic:1.5.0")
+    implementation("org.yaml:snakeyaml:2.0")
     implementation("org.reflections:reflections:0.10.2")
 
     implementation("org.ow2.asm:asm:9.6")

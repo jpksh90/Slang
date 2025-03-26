@@ -1,4 +1,8 @@
+import org.antlr.v4.runtime.ANTLRInputStream
+import org.antlr.v4.runtime.CommonTokenStream
 import org.approvaltests.Approvals
+import slast.ast.IRBuilder
+import slast.ast.prettyPrint
 import slang.parser.FileParserInterface
 import slang.slast.SlastBuilder
 import slang.slast.prettyPrint
@@ -12,15 +16,12 @@ class IRBuilderTests {
         return IRBuilderTests::class.java.getResource("/$name")
     }
 
-    fun buildAst(testCase: URL): String {
-        val file = File(testCase.toURI())
-        val parser = FileParserInterface(file)
-        val result = parser.parse()
-        if (result) {
-            val irBuilder = SlastBuilder(parser.compilationUnit).compilationUnit
-            return irBuilder.prettyPrint()
-        }
-        return ""
+    fun buildAst(input: String): String {
+        val lexer = SimpleLangLexer(ANTLRInputStream(input))
+        val parser = SimpleLangParser(CommonTokenStream(lexer))
+        val tree = parser.compilationUnit()
+        val IRBuilder = IRBuilder()
+        return IRBuilder.visit(tree).prettyPrint()
     }
 
     @Test
