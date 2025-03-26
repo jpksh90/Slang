@@ -5,3 +5,5 @@ fun apply(f, x) => f(x);
 fun fixpoint(f, x) => if (f(x) == x) then x else fixpoint(f, f(x));
 
 fun double(f, x)  => f(f(x));
+
+fun triple(f, x) => f(f(f(x)));

@@ -194,13 +194,21 @@ class ASTViewer : JFrame("Slang AST Visualizer") {
         inputPanel.add(inputScrollPane)
         inputPanel.add(Box.createHorizontalGlue())
         inputPanel.add(caretPositionLabel)
-        inputPanel.add(errorPanel)
+//        inputPanel.add(errorPanel)
+
+        val tabbedPane = JTabbedPane()
+        tabbedPane.add(errorPanel)
+        tabbedPane.add(createOutputPanel())
+
+        val inputSplit = JSplitPane(JSplitPane.VERTICAL_SPLIT, inputPanel, tabbedPane)
+        inputSplit.resizeWeight=0.5
+
 
         val treeRoot = DefaultMutableTreeNode("AST will appear here")
         val tree = JTree(treeRoot)
         astPanel.add(JScrollPane(tree), BorderLayout.CENTER)
 
-        splitPane = JSplitPane(JSplitPane.HORIZONTAL_SPLIT, inputPanel, astPanel)
+        splitPane = JSplitPane(JSplitPane.HORIZONTAL_SPLIT, inputSplit, astPanel)
         splitPane.resizeWeight = 0.5
         add(splitPane, BorderLayout.CENTER)
         add(statusBar, BorderLayout.SOUTH)
@@ -278,6 +286,12 @@ class ASTViewer : JFrame("Slang AST Visualizer") {
         errorPanel.border = BorderFactory.createTitledBorder("Compiler Errors")
         errorPanel.add(JScrollPane(errorList), BorderLayout.CENTER)
         return errorPanel
+    }
+
+    private fun createOutputPanel() : JPanel {
+        val outputPanel = JPanel(BorderLayout())
+        outputPanel.border = BorderFactory.createTitledBorder("Output")
+        return outputPanel
     }
 
     private fun createButtonPanel(): JPanel {
