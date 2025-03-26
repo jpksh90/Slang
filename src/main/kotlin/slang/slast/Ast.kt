@@ -146,7 +146,9 @@ data class BinaryExpr(val left: Expr, val op: Operator, val right: Expr) : Expr(
 data class IfExpr(val condition: Expr, val thenExpr: Expr, val elseExpr: Expr) : Expr()
 data class ParenExpr(val expr: Expr) : Expr()
 data object NoneValue : Expr()
-data class Record(val expression: List<Pair<String, Expr>>) : Expr()
+data class Record(val expression: List<Pair<String, Expr>>) : Expr() {
+    fun getIdentifiers() = expression.map { it.first }
+}
 data class StringLiteral(val value: String) : Expr()
 data class RefExpr(val expr: Expr) : Expr()
 data class DerefExpr(val expr: Expr) : Expr()
