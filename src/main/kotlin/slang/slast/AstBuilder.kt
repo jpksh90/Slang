@@ -1,4 +1,4 @@
-package slast.ast
+package slang.slast
 
 import SlangBaseVisitor
 import SlangLexer
@@ -6,7 +6,9 @@ import SlangParser
 import org.antlr.v4.runtime.ANTLRInputStream
 import org.antlr.v4.runtime.CommonTokenStream
 
-class IRBuilder() : SlangBaseVisitor<SlastNode>() {
+class IRBuilder : SlangBaseVisitor<SlastNode>() {
+
+    private val anonymousFunctionCounter = 0
 
     override fun visitLetExpr(ctx: SlangParser.LetExprContext): SlastNode {
         return LetStmt(ctx.ID().text, visit(ctx.expr()) as Expr)
@@ -16,15 +18,21 @@ class IRBuilder() : SlangBaseVisitor<SlastNode>() {
         return AssignStmt(visit(ctx.lhs()) as Expr, visit(ctx.expr()) as Expr)
     }
 
-    override fun visitFunPure(ctx: SlangParser.FunPureContext): SlastNode {
+    override fun visitFunPureExpr(ctx: SlangParser.FunPureExprContext): SlastNode {
         val params = ctx.paramList()?.ID()?.map { it.text } ?: emptyList()
-        return FunPureStmt(ctx.ID().text, params, visit(ctx.expr()) as Expr)
+
+        val id = if (ctx.ID() != null) {
+            ctx.ID().text
+        } else {
+            "anonymous~$anonymousFunctionCounter"
+        }
+        return FunPureExpr(id, params, visit(ctx.expr()) as Expr)
     }
 
-    override fun visitFunImpure(ctx: SlangParser.FunImpureContext): SlastNode {
+    override fun visitFunImpureExpr(ctx: SlangParser.FunImpureExprContext): SlastNode {
         val params = ctx.paramList()?.ID()?.map { it.text } ?: emptyList()
         val body = ctx.stmt().map { visit(it) as Stmt }
-        return FunImpureStmt(ctx.ID().text, params, BlockStmt(body))
+        return FunImpureExpr(ctx.ID().text, params, BlockStmt(body))
     }
 
     override fun visitWhileStmt(ctx: SlangParser.WhileStmtContext): SlastNode {
@@ -72,10 +80,10 @@ class IRBuilder() : SlangBaseVisitor<SlastNode>() {
     override fun visitFuncCallExpr(ctx: SlangParser.FuncCallExprContext): SlastNode {
         val args = ctx.argList()?.expr()?.map { visit(it) as Expr } ?: emptyList()
         val target = visit(ctx.expr()) as Expr
-        if (target is VarExpr) {
-            return FuncCallExpr(target.name, args)
+        return if (target is VarExpr) {
+            NamedFunctionCall(target.name, args)
         } else {
-            return FuncCallExpr("unresolved", args)
+            ExpressionFunctionCall(target, args)
         }
     }
 

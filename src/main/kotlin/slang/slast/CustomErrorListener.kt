@@ -1,4 +1,4 @@
-package slast.ast
+package slang.slast
 
 import org.antlr.v4.runtime.BaseErrorListener
 import org.antlr.v4.runtime.RecognitionException

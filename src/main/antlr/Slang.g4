@@ -5,8 +5,6 @@ compilationUnit  : stmt* EOF ;
 stmt
     : 'let' ID '=' expr ';'    # letExpr
     | lhs '=' expr ';' # assignExpr
-    | 'fun' ID '(' paramList? ')' '=>'  expr ';' # funPure
-    | 'fun' ID '(' paramList? ')' '{' stmt* '}' # funImpure
     | 'while' expr blockStmt # whileStmt
     | 'for' '(' ID '=' expr ';' expr ';' ID1 = expr ')' blockStmt # forStmt
     | 'print' '(' argList? ')' ';' # printStmt
@@ -33,6 +31,8 @@ expr
     | expr op=('+' | '-') expr                          # arithmeticExpr
     | expr op=('==' | '!=' | '<' | '>') expr            # comparisonExpr
     | expr op=('&&' | '||') expr                        # booleanExpr
+    | 'fun' ID? '(' paramList? ')' '=>'  expr           # funPureExpr
+    | 'fun' ID? '(' paramList? ')' '{' stmt* '}'        # funImpureExpr
     ;
 
 primaryExpr

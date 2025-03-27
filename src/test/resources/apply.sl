@@ -5,3 +5,17 @@ fun apply(f, x) => f(x);
 fun fixpoint(f, x) => if (f(x) == x) then x else fixpoint(f, f(x));
 
 fun double(f, x)  => f(f(x));
+
+fun test() {
+  let f = fun (x) => x + 1;
+  let x = 0;
+  let n = 10;
+  let y = apply_n(f, n, x);
+  let z = apply(f, x);
+  let w = fixpoint(f, x);
+  let v = double(f, x);
+  print(y);
+  print(z);
+  print(w);
+  print(v);
+};

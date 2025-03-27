@@ -1,4 +1,4 @@
-package slast.ast
+package slang.slast
 
 import SlangLexer
 import SlangParser
@@ -10,8 +10,8 @@ sealed class SlastNode {
         return when (this) {
             is LetStmt -> visitor.visitLetStmt(this)
             is AssignStmt -> visitor.visitAssignStmt(this)
-            is FunPureStmt -> visitor.visitFunPureStmt(this)
-            is FunImpureStmt -> visitor.visitFunImpureStmt(this)
+            is FunPureExpr -> visitor.visitFunPureStmt(this)
+            is FunImpureExpr -> visitor.visitFunImpureStmt(this)
             is WhileStmt -> visitor.visitWhileStmt(this)
             is PrintStmt -> visitor.visitPrintStmt(this)
             is IfStmt -> visitor.visitIfStmt(this)
@@ -83,8 +83,8 @@ enum class Operator {
 
 data class CompilationUnit(val stmt: List<Stmt>) : SlastNode() {
     fun collectFunctionDeclarations() : List<String> {
-        val pureFunctions = stmt.filterIsInstance<FunPureStmt>().map { it.name }
-        val impureFunctions = stmt.filterIsInstance<FunImpureStmt>().map { it.name }
+        val pureFunctions = stmt.filterIsInstance<FunPureExpr>().map { it.name }
+        val impureFunctions = stmt.filterIsInstance<FunImpureExpr>().map { it.name }
         return pureFunctions + impureFunctions
     }
 }
@@ -103,17 +103,6 @@ data class AssignStmt(val lhs: Expr, val expr: Expr) : Stmt() {
     }
 }
 
-data class FunPureStmt(val name: String, val params: List<String>, val body: Expr) : Stmt() {
-    override fun <T> accept(visitor: ASTVisitor<T?>): T? {
-        return body.accept(visitor)
-    }
-}
-
-data class FunImpureStmt(val name: String, val params: List<String>, val body: BlockStmt) : Stmt() {
-    override fun <T> accept(visitor: ASTVisitor<T?>): T? {
-        return body.accept(visitor)
-    }
-}
 data class WhileStmt(val condition: Expr, val body: BlockStmt) : Stmt() {
     override fun <T> accept(visitor: ASTVisitor<T?>): T? {
         return body.accept(visitor)
@@ -137,7 +126,6 @@ data class NumberLiteral(val value: Double) : Expr()
 data class BoolLiteral(val value: Boolean) : Expr()
 data class VarExpr(val name: String) : Expr()
 data object ReadInputExpr : Expr()
-data class FuncCallExpr(val target: String, val args: List<Expr>) : Expr()
 data class BinaryExpr(val left: Expr, val op: Operator, val right: Expr) : Expr()
 data class IfExpr(val condition: Expr, val thenExpr: Expr, val elseExpr: Expr) : Expr()
 data class ParenExpr(val expr: Expr) : Expr()
@@ -148,12 +136,29 @@ data class RefExpr(val expr: Expr) : Expr()
 data class DerefExpr(val expr: Expr) : Expr()
 data class FieldAccess(val lhs: Expr, val rhs: Expr) : Expr()
 
+sealed class FuncCallExpr : Expr()
+data class NamedFunctionCall(val name: String, val arguments: List<Expr>) : FuncCallExpr()
+data class ExpressionFunctionCall(val target: Expr, val arguments: List<Expr>) : FuncCallExpr()
+
+data class FunPureExpr(val name: String, val params: List<String>, val body: Expr) : Expr() {
+    override fun <T> accept(visitor: ASTVisitor<T?>): T? {
+        return body.accept(visitor)
+    }
+}
+
+data class FunImpureExpr(val name: String, val params: List<String>, val body: BlockStmt) : Expr() {
+    override fun <T> accept(visitor: ASTVisitor<T?>): T? {
+        return body.accept(visitor)
+    }
+}
+
 fun SlastNode.prettyPrint(tabStop: Int = 0): String {
     val indent = "  ".repeat(tabStop)
     return when (this) {
         is BinaryExpr -> "${left.prettyPrint()} ${op} ${right.prettyPrint()}"
         is BoolLiteral -> value.toString()
-        is FuncCallExpr -> "$target(${args.joinToString(", ") { it.prettyPrint() }})"
+        is ExpressionFunctionCall -> "$target(${arguments.joinToString(", ") { it.prettyPrint() }})"
+        is NamedFunctionCall -> "$name(${arguments.joinToString(", ") { it.prettyPrint() }})"
         is IfExpr -> "if (${condition.prettyPrint()}) then ${thenExpr.prettyPrint()} else ${elseExpr.prettyPrint()}"
         is NumberLiteral -> value.toString()
         is ParenExpr -> "(${expr.prettyPrint()})"
@@ -163,9 +168,9 @@ fun SlastNode.prettyPrint(tabStop: Int = 0): String {
         is AssignStmt -> "$indent${lhs.prettyPrint()} = ${expr.prettyPrint()};"
         is BlockStmt -> "$indent{\n" + stmts.joinToString("\n") { it.prettyPrint(tabStop + 1) } + "\n$indent}"
         is ExprStmt -> "$indent${expr.prettyPrint()};"
-        is FunImpureStmt -> "$indent fun $name(${params.joinToString(", ")}) {\n" + body.prettyPrint(tabStop + 1) + "\n$indent}"
+        is FunImpureExpr -> "$indent fun $name(${params.joinToString(", ")}) {\n" + body.prettyPrint(tabStop + 1) + "\n$indent}"
         is NoneValue -> "None"
-        is FunPureStmt -> "$indent fun $name(${params.joinToString(", ")}) => ${body.prettyPrint()}"
+        is FunPureExpr -> "$indent fun $name(${params.joinToString(", ")}) => ${body.prettyPrint()}"
         is IfStmt -> "$indent if (${condition.prettyPrint()}) {\n" + thenBody.prettyPrint(tabStop + 1) + "\n$indent} else {\n" + elseBody.prettyPrint(tabStop + 1) + "\n$indent}"
         is LetStmt -> "$indent let $name = ${expr.prettyPrint()};"
         is PrintStmt -> "$indent print(${args.joinToString(", ") { it.prettyPrint() }});"
