@@ -3,7 +3,9 @@ grammar Slang;
 compilationUnit  : stmt* EOF ;
 
 stmt
-    : 'let' ID '=' expr ';'    # letExpr
+    : 'fun' ID '(' paramList? ')' '=>'  expr ';' #funPureStmt
+    | 'fun' ID '(' paramList? ')' '{' stmt* '}' #funImpureStmt
+    |'let' ID '=' expr ';'    # letExpr
     | lhs '=' expr ';' # assignExpr
     | 'while' expr blockStmt # whileStmt
     | 'for' '(' ID '=' expr ';' expr ';' ID1 = expr ')' blockStmt # forStmt
@@ -29,10 +31,10 @@ expr
     | 'if' '(' expr ')' 'then' expr 'else' expr         # ifExpr
     | expr op=('*' | '/') expr                          # arithmeticExpr
     | expr op=('+' | '-') expr                          # arithmeticExpr
-    | expr op=('==' | '!=' | '<' | '>') expr            # comparisonExpr
+    | expr op=('==' | '!=' | '<' | '>' | '<=' | '>=' ) expr            # comparisonExpr
     | expr op=('&&' | '||') expr                        # booleanExpr
-    | 'fun' ID? '(' paramList? ')' '=>'  expr           # funPureExpr
-    | 'fun' ID? '(' paramList? ')' '{' stmt* '}'        # funImpureExpr
+    | 'fun' '(' paramList? ')' '=>'  expr               # funAnonymousPureExpr
+    | 'fun' '(' paramList? ')' '{' stmt* '}'            # funAnonymousImpureExpr
     ;
 
 primaryExpr

@@ -85,7 +85,7 @@ class IRBuilderTests {
 
     @Test
     fun testCase8() {
-        val program = loadTestProgram("apply.sl")
+        val program = loadTestProgram("misc.sl")
         if (program != null) {
             val ast = buildAst(program.readText())
             Approvals.verify(ast)

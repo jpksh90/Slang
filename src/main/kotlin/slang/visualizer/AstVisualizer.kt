@@ -11,6 +11,7 @@ import org.fife.ui.rsyntaxtextarea.Theme
 import org.fife.ui.rsyntaxtextarea.TokenMakerFactory
 import org.fife.ui.rtextarea.RTextScrollPane
 import slang.slast.*
+import slang.slast.Function
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.GridLayout
@@ -57,12 +58,12 @@ fun SlastNode.toTreeNode(): DefaultMutableTreeNode {
             add(expr.toTreeNode())
         }
 
-        is FunPureExpr -> DefaultMutableTreeNode("FunPure(${name})").apply {
+        is InlinedFunction -> DefaultMutableTreeNode("InlineFunction").apply {
             params.forEach { add(DefaultMutableTreeNode(it)) }
             add(body.toTreeNode())
         }
 
-        is FunImpureExpr -> DefaultMutableTreeNode("FunImpure(${name})").apply {
+        is Function -> DefaultMutableTreeNode("FunImpure(${name})").apply {
             params.forEach { add(DefaultMutableTreeNode(it)) }
             add(body.toTreeNode())
         }

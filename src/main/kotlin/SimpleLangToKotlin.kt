@@ -1,4 +1,5 @@
 import slang.slast.*
+import slang.slast.Function
 
 class SlangToKotlin {
     fun generate(ast: SlastNode): String {
@@ -29,8 +30,8 @@ class SlangToKotlin {
             is StringLiteral -> TODO()
             is DerefStmt -> TODO()
             is ExprStmt -> TODO()
-            is FunImpureExpr -> TODO()
-            is FunPureExpr -> TODO()
+            is Function -> TODO()
+            is InlinedFunction -> TODO()
             is ReturnStmt -> TODO()
         }
     }
