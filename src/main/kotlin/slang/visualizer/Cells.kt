@@ -1,4 +1,4 @@
-package slast.visualizer
+package slang.visualizer
 
 import java.awt.Color
 import java.awt.Component

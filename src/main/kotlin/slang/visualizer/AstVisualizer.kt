@@ -1,4 +1,4 @@
-package slast.visualizer
+package slang.visualizer
 
 import SlangLexer
 import SlangParser
@@ -10,7 +10,8 @@ import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
 import org.fife.ui.rsyntaxtextarea.Theme
 import org.fife.ui.rsyntaxtextarea.TokenMakerFactory
 import org.fife.ui.rtextarea.RTextScrollPane
-import slast.ast.*
+import slang.slast.*
+import slang.slast.Function
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.GridLayout
@@ -57,12 +58,12 @@ fun SlastNode.toTreeNode(): DefaultMutableTreeNode {
             add(expr.toTreeNode())
         }
 
-        is FunPureStmt -> DefaultMutableTreeNode("FunPure(${name})").apply {
+        is InlinedFunction -> DefaultMutableTreeNode("InlineFunction").apply {
             params.forEach { add(DefaultMutableTreeNode(it)) }
             add(body.toTreeNode())
         }
 
-        is FunImpureStmt -> DefaultMutableTreeNode("FunImpure(${name})").apply {
+        is Function -> DefaultMutableTreeNode("FunImpure(${name})").apply {
             params.forEach { add(DefaultMutableTreeNode(it)) }
             add(body.toTreeNode())
         }
@@ -89,7 +90,8 @@ fun SlastNode.toTreeNode(): DefaultMutableTreeNode {
         is BoolLiteral -> DefaultMutableTreeNode("Boolean($value)")
         is VarExpr -> DefaultMutableTreeNode("VarExpr($name)")
         is ReadInputExpr -> DefaultMutableTreeNode("ReadInputExpr")
-        is FuncCallExpr -> DefaultMutableTreeNode("FuncCall(${target})").apply { args.forEach { add(it.toTreeNode()) } }
+        is NamedFunctionCall -> DefaultMutableTreeNode("FuncCall(${name})").apply { arguments.forEach { add(it.toTreeNode()) } }
+        is ExpressionFunctionCall -> DefaultMutableTreeNode("FuncCall(${target})").apply { arguments.forEach { add(it.toTreeNode()) } }
         is BinaryExpr -> DefaultMutableTreeNode("BinaryExpr(${this.prettyPrint()})").apply {
             add(left.toTreeNode())
             add(DefaultMutableTreeNode("op=${op}"))

@@ -1,7 +1,6 @@
-package slast.visualizer
+package slang.visualizer
 
 import org.fife.ui.rsyntaxtextarea.AbstractTokenMaker
-import org.fife.ui.rsyntaxtextarea.RSyntaxUtilities
 import org.fife.ui.rsyntaxtextarea.Token
 import org.fife.ui.rsyntaxtextarea.TokenMap
 import javax.swing.text.Segment

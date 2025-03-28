@@ -1,10 +1,10 @@
-package slast.ast
+package slang.slast
 
 interface ASTVisitor<T> {
     fun visitLetStmt(stmt: LetStmt): T
     fun visitAssignStmt(stmt: AssignStmt): T
-    fun visitFunPureStmt(stmt: FunPureStmt): T
-    fun visitFunImpureStmt(stmt: FunImpureStmt): T
+    fun visitInlinedFunction(stmt: InlinedFunction): T
+    fun visitFunction(stmt: Function): T
     fun visitWhileStmt(stmt: WhileStmt): T
     fun visitPrintStmt(stmt: PrintStmt): T
     fun visitIfStmt(stmt: IfStmt): T
@@ -39,8 +39,8 @@ abstract class BaseASTVisitor<T> : ASTVisitor<T> {
 
     override fun visitLetStmt(stmt: LetStmt): T = defaultVisit()
     override fun visitAssignStmt(stmt: AssignStmt): T = defaultVisit()
-    override fun visitFunPureStmt(stmt: FunPureStmt): T = defaultVisit()
-    override fun visitFunImpureStmt(stmt: FunImpureStmt): T = defaultVisit()
+    override fun visitInlinedFunction(stmt: InlinedFunction): T = defaultVisit()
+    override fun visitFunction(stmt: Function): T = defaultVisit()
     override fun visitWhileStmt(stmt: WhileStmt): T = defaultVisit()
     override fun visitPrintStmt(stmt: PrintStmt): T = defaultVisit()
     override fun visitIfStmt(stmt: IfStmt): T = defaultVisit()

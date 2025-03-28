@@ -1,8 +1,8 @@
 import org.antlr.v4.runtime.ANTLRInputStream
 import org.antlr.v4.runtime.CommonTokenStream
 import org.approvaltests.Approvals
-import slast.ast.IRBuilder
-import slast.ast.prettyPrint
+import slang.slast.IRBuilder
+import slang.slast.prettyPrint
 import java.net.URL
 import kotlin.test.Test
 
@@ -85,7 +85,7 @@ class IRBuilderTests {
 
     @Test
     fun testCase8() {
-        val program = loadTestProgram("apply.sl")
+        val program = loadTestProgram("misc.sl")
         if (program != null) {
             val ast = buildAst(program.readText())
             Approvals.verify(ast)

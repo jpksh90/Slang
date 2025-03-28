@@ -12,10 +12,10 @@ import org.slf4j.LoggerFactory
 import org.yaml.snakeyaml.DumperOptions
 import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.nodes.Tag
-import slast.ast.CustomErrorListener
-import slast.ast.IRBuilder
-import slast.ast.SlastNode
-import slast.ast.prettyPrint
+import slang.slast.CustomErrorListener
+import slang.slast.IRBuilder
+import slang.slast.SlastNode
+import slang.slast.prettyPrint
 import java.nio.file.Files
 import java.nio.file.Paths
 import kotlin.io.path.readText
