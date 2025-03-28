@@ -12,13 +12,12 @@ import org.slf4j.LoggerFactory
 import org.yaml.snakeyaml.DumperOptions
 import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.nodes.Tag
-import slang.slast.CustomErrorListener
-import slang.slast.IRBuilder
-import slang.slast.SlastNode
-import slang.slast.prettyPrint
+import slang.parser.Parser
+import slang.slast.*
 import java.nio.file.Files
 import java.nio.file.Paths
 import kotlin.io.path.readText
+import kotlin.math.log
 
 private const val BYTECODE_OPT = "bytecode"
 
@@ -72,24 +71,22 @@ class SlangcCLI : CliktCommand("slangc") {
             return
         }
 
-        val fileContents = file.readText()
-
-        val lexer = SlangLexer(ANTLRInputStream(fileContents))
-        val parser = SlangParser(CommonTokenStream(lexer))
-        val errorListener = CustomErrorListener()
-        parser.addErrorListener(errorListener)
-        val parseTree = parser.compilationUnit()
-
-        for (error in errorListener.errors) {
-            println(error)
+        val parser = Parser(file.toFile())
+        val parseTree = parser.parse()
+        
+        if (parseTree == null) {
+            logger.error("Failed to parse the input file")
+            for (error in parser.getErrors()) {
+                logger.error(error)
+            }
+            return
         }
 
         if (stage == AST_OPT) {
             println(dumpAst(parseTree))
         }
 
-        val irBuilder = IRBuilder()
-        val irTree = irBuilder.visit(parseTree)
+        val irTree = SlastBuilder(parseTree).compilationUnit
         if (stage == IR_OPT) {
            println(irTree.prettyPrint())
         }

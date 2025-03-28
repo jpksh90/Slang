@@ -40,8 +40,8 @@ fun parseProgram(input: String, errorListModel: DefaultListModel<String>): Slast
         errorListModel.addAll(errorListener.errors)
     }
 
-    val irBuilder = IRBuilder()
-    val ast = irBuilder.visit(parseTree) as CompilationUnit
+    val irBuilder = SlastBuilder(parseTree)
+    val ast = irBuilder.compilationUnit
     return ast
 }
 

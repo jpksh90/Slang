@@ -12,8 +12,8 @@ class SlastBuilder(ctx: SlangParser.CompilationUnitContext) {
     val compilationUnit: CompilationUnit
 
     init {
-        val IRBuilder = IRBuilder()
-        compilationUnit = IRBuilder.visit(ctx) as CompilationUnit
+        val irBuilder = IRBuilder()
+        compilationUnit = irBuilder.visit(ctx) as CompilationUnit
     }
 
     class IRBuilder : SlangBaseVisitor<SlastNode>() {
