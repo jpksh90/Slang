@@ -14,6 +14,8 @@ stmt
     | expr ';' # exprStmt
     | 'return' expr ';' #returnStmt
     | 'do' blockStmt 'while' '(' expr ')' ';' #doWhileStmt
+    | 'break' ';' #breakStmt
+    | 'continue' ';' #continueStmt
     ;
 
 recordElems
