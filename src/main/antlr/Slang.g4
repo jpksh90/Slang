@@ -16,6 +16,15 @@ stmt
     | 'do' blockStmt 'while' '(' expr ')' ';' #doWhileStmt
     | 'break' ';' #breakStmt
     | 'continue' ';' #continueStmt
+    | 'struct' ID '(' constructorMembers ')' '{' structMember*'}' #structStmt
+    ;
+
+constructorMembers : ID (',' ID)* ;
+
+structMember
+    : 'let' ID '=' expr ';' # structField
+    | 'fun' ID '(' paramList? ')' '=>'  expr ';' # structMethodPure
+    | 'fun' ID '(' paramList? ')' '{' stmt* '}' # structMethodImpure
     ;
 
 recordElems
@@ -37,7 +46,11 @@ expr
     | expr op=('&&' | '||') expr                        # booleanExpr
     | 'fun' '(' paramList? ')' '=>'  expr               # funAnonymousPureExpr
     | 'fun' '(' paramList? ')' '{' stmt* '}'            # funAnonymousImpureExpr
+    | expr '[' expr ']'                                 # arrayAccessExpr
+    | '(' exprList ')'                                  # arrayLiteralExpression
     ;
+
+exprList : expr (',' expr)* ;
 
 primaryExpr
     : NUMBER                      # intExpr

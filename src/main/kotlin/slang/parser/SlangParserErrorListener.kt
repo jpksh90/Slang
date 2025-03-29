@@ -1,10 +1,10 @@
-package slang.slast
+package slang.parser
 
 import org.antlr.v4.runtime.BaseErrorListener
 import org.antlr.v4.runtime.RecognitionException
 import org.antlr.v4.runtime.Recognizer
 
-class CustomErrorListener : BaseErrorListener() {
+class SlangParserErrorListener : BaseErrorListener() {
     val errors = mutableListOf<String>()
 
     override fun syntaxError(

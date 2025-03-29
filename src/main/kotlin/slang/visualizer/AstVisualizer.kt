@@ -10,6 +10,7 @@ import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
 import org.fife.ui.rsyntaxtextarea.Theme
 import org.fife.ui.rsyntaxtextarea.TokenMakerFactory
 import org.fife.ui.rtextarea.RTextScrollPane
+import slang.parser.SlangParserErrorListener
 import slang.slast.*
 import slang.slast.Function
 import java.awt.BorderLayout
@@ -30,7 +31,7 @@ fun parseProgram(input: String, errorListModel: DefaultListModel<String>): Slast
     val parser = SlangParser(CommonTokenStream(SlangLexer(ANTLRInputStream(input))))
 
     parser.removeErrorListeners()
-    val errorListener = CustomErrorListener()
+    val errorListener = SlangParserErrorListener()
     parser.addErrorListener(errorListener)
 
     val parseTree = parser.compilationUnit()
