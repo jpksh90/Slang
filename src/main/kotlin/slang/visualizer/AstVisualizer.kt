@@ -128,6 +128,24 @@ fun SlastNode.toTreeNode(): DefaultMutableTreeNode {
             add(lhs.toTreeNode())
             add(DefaultMutableTreeNode(rhs))
         }
+
+        is ArrayAccess -> DefaultMutableTreeNode("ArrayAccess(${this.prettyPrint()})").apply {
+            add(array.toTreeNode())
+            add(index.toTreeNode())
+        }
+        is ArrayInit -> DefaultMutableTreeNode("ArrayInit").apply {
+            elements.forEach { add(it.toTreeNode()) }
+        }
+        Break -> DefaultMutableTreeNode("break")
+        Continue -> DefaultMutableTreeNode("continue")
+        is StructStmt -> DefaultMutableTreeNode("StructStmt").apply {
+            add(DefaultMutableTreeNode("id=${id}"))
+            fields.forEach {
+                add(DefaultMutableTreeNode("Field(${it.component1()})").apply {
+                    add(DefaultMutableTreeNode("Type(${it.component2()})"))
+                })
+            }
+        }
     }
 }
 

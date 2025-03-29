@@ -6,6 +6,7 @@ import SlangParser
 import SlangParser.ExprContext
 import org.antlr.v4.runtime.ANTLRInputStream
 import org.antlr.v4.runtime.CommonTokenStream
+import org.antlr.v4.runtime.ParserRuleContext
 import java.io.File
 
 abstract class CompilationRule(val errorListener: SlangParserErrorListener) : SlangBaseVisitor<Boolean>()
@@ -27,7 +28,7 @@ class Parser(file: File) {
 
         // Initialize the compilation rules here
         addCompilationRule(BreakContinueChecker(errorListener))
-        addCompilationRule(AnonymousFunctionInBinaryOperator(errorListener))
+        addCompilationRule(InvalidOperandsInBinaryOperator(errorListener))
     }
 
     fun getErrors() : List<String> {
@@ -93,23 +94,24 @@ class BreakContinueChecker(errorListener: SlangParserErrorListener) : Compilatio
     }
 }
 
-class AnonymousFunctionInBinaryOperator(errorListener: SlangParserErrorListener) : CompilationRule(errorListener) {
+class InvalidOperandsInBinaryOperator(errorListener: SlangParserErrorListener) : CompilationRule(errorListener) {
 
-    private fun isAnonymousFunction(ctx: SlangParser.ExprContext) : Boolean {
+    private fun isInvalidOperand(ctx: ParserRuleContext) : Boolean {
         return ctx is SlangParser.FunAnonymousPureExprContext || ctx is SlangParser.FunAnonymousImpureExprContext
+                || ctx is SlangParser.ReadInputExprContext
     }
 
-    private fun check(operand1: SlangParser.ExprContext, operand2: ExprContext, type: String) : Boolean {
-        if (isAnonymousFunction(operand1)) {
+    private fun check(operand1: ParserRuleContext, operand2: ParserRuleContext, type: String) : Boolean {
+        if (isInvalidOperand(operand1)) {
             errorListener.errors.add(
-                "Anonymous function cannot be used as operand in $type expression at line " +
+                "${operand1.text} cannot be used as operand in $type expression at line " +
                         "${operand1.start.line}:${operand1.start.charPositionInLine} - ${operand1.text}"
             )
             return false
         }
-        if (isAnonymousFunction(operand2)) {
+        if (isInvalidOperand(operand2)) {
             errorListener.errors.add(
-                "Anonymous function cannot be used as operand in $type expression at line " +
+                "${operand2.text} function cannot be used as operand in $type expression at line " +
                         "${operand2.start.line}:${operand2.start.charPositionInLine} - ${operand2.text}"
             )
             return false
