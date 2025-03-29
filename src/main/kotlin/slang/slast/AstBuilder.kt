@@ -6,6 +6,7 @@ import SlangParser
 import org.antlr.v4.runtime.ANTLRInputStream
 import org.antlr.v4.runtime.CommonTokenStream
 import org.antlr.v4.runtime.ParserRuleContext
+import slang.parser.SlangParserErrorListener
 
 
 class SlastBuilder(ctx: SlangParser.CompilationUnitContext) {
@@ -288,6 +289,45 @@ class SlastBuilder(ctx: SlangParser.CompilationUnitContext) {
             expr.sourceCodeInfo = createSourceCodeInfo(ctx)
             return expr
         }
+
+        override fun visitStructStmt(ctx: SlangParser.StructStmtContext): SlastNode {
+            val id = ctx.ID().text
+            val fields = HashMap<String, Expr>()
+            val methods = mutableListOf<Function>()
+
+            for (argument in ctx.constructorMembers().ID()) {
+                val fieldName = argument.text
+                fields[fieldName] = NoneValue
+            }
+
+            for (member in ctx.structMember()) {
+                if (member is SlangParser.StructFieldContext) {
+                    val fieldName = member.ID().text
+                    val fieldExpr = visit(member.expr()) as Expr
+                    fields[fieldName] = fieldExpr
+                }
+
+                if (member is SlangParser.StructMethodPureContext) {
+                    methods.addLast(visit(member) as Function)
+                }
+
+                if (member is SlangParser.StructMethodImpureContext) {
+                    methods.addLast(visit(member) as Function)
+                }
+            }
+            val expr = StructStmt(id, methods, fields)
+            expr.sourceCodeInfo = createSourceCodeInfo(ctx)
+            return expr
+        }
+
+        override fun visitBreakStmt(ctx: SlangParser.BreakStmtContext?): SlastNode {
+            return Break
+        }
+
+        override fun visitContinueStmt(ctx: SlangParser.ContinueStmtContext?): SlastNode {
+            return Continue
+        }
+
     }
 }
 
@@ -298,7 +338,7 @@ fun main() {
         val parser = SlangParser(CommonTokenStream(SlangLexer(ANTLRInputStream(input))))
 
         parser.removeErrorListeners()
-        val errorListener = CustomErrorListener()
+        val errorListener = SlangParserErrorListener()
         parser.addErrorListener(errorListener)
 
         val parseTree = parser.compilationUnit()

@@ -30,6 +30,11 @@ interface ASTVisitor<T> {
     fun visitDerefExpr(expr: DerefExpr): T
     fun visitDerefStmt(stmt: DerefStmt): T
     fun visitFieldAccessExpr(expr: FieldAccess): T
+    fun visitStructStmt(expr: StructStmt) : T
+    fun visitArrayInit(expr: ArrayInit) : T
+    fun visitArrayAccess(expr: ArrayAccess) : T
+    fun visitBreak(arg: Break): T
+    fun visitContinue(arg: Continue): T
 }
 
 abstract class BaseASTVisitor<T> : ASTVisitor<T> {

@@ -38,6 +38,11 @@ sealed class SlastNode {
             is RefExpr -> visitor.visitRefExpr(this)
             is DerefStmt -> visitor.visitDerefStmt(this)
             is FieldAccess -> visitor.visitFieldAccessExpr(this)
+            is StructStmt -> visitor.visitStructStmt(this)
+            is ArrayInit -> visitor.visitArrayInit(this)
+            is ArrayAccess -> visitor.visitArrayAccess(this)
+            is Break -> visitor.visitBreak(this)
+            is Continue -> visitor.visitContinue(this)
         }
     }
 
@@ -126,6 +131,9 @@ data class ExprStmt(val expr: Expr) : Stmt()
 data class ReturnStmt(val expr: Expr) : Stmt()
 data class BlockStmt(val stmts: List<Stmt>) : Stmt()
 data class DerefStmt(val lhs: Expr, val rhs: Expr) : Stmt()
+data class StructStmt(val id: String, val functions: List<Function>, val fields: HashMap<String, Expr>) : Stmt()
+data object Break : Stmt()
+data object Continue : Stmt()
 
 // Expressions
 sealed class Expr : SlastNode()
@@ -142,6 +150,8 @@ data class StringLiteral(val value: String) : Expr()
 data class RefExpr(val expr: Expr) : Expr()
 data class DerefExpr(val expr: Expr) : Expr()
 data class FieldAccess(val lhs: Expr, val rhs: Expr) : Expr()
+data class ArrayInit(val elements: List<Expr>) : Expr()
+data class ArrayAccess(val array: Expr, val index: Expr) : Expr()
 
 sealed class FuncCallExpr : Expr()
 data class NamedFunctionCall(val name: String, val arguments: List<Expr>) : FuncCallExpr()
@@ -189,6 +199,13 @@ fun SlastNode.prettyPrint(tabStop: Int = 0): String {
         is RefExpr -> "ref(${expr.prettyPrint()})"
         is DerefStmt -> "$indent deref(${lhs.prettyPrint()}) = ${rhs.prettyPrint()};"
         is FieldAccess -> "${lhs.prettyPrint()}.${rhs}"
+        is StructStmt -> "$indent struct $id {\n" + functions.joinToString("\n") { it.prettyPrint(tabStop + 1) } +
+                "\n$indent}" + fields.entries.joinToString("\n") { "$indent ${it.key} : ${it.value.prettyPrint()}" }
+
+        is ArrayAccess -> "${array.prettyPrint()}[${index.prettyPrint()}]"
+        is ArrayInit -> "$indent [${elements.joinToString(", ") { it.prettyPrint() }}]"
+        is Break -> "$indent break;"
+        is Continue -> "$indent continue;"
     }
 }
 //fun ASTNode.isFunctionDeclaration(): Boolean {
