@@ -38,7 +38,7 @@ fun parseProgram(input: String, errorListModel: DefaultListModel<String>): Slast
 
     SwingUtilities.invokeLater {
         errorListModel.clear()
-        errorListModel.addAll(errorListener.errors)
+        errorListModel.addAll(errorListener.errors.sortedBy { it.line }.sortedBy { it.charPositionInLine }.map { it.message })
     }
 
     val irBuilder = SlastBuilder(parseTree)
