@@ -3,7 +3,6 @@ package slang.parser
 import SlangBaseVisitor
 import SlangLexer
 import SlangParser
-import SlangParser.ExprContext
 import org.antlr.v4.runtime.ANTLRInputStream
 import org.antlr.v4.runtime.CommonTokenStream
 import org.antlr.v4.runtime.ParserRuleContext
@@ -14,9 +13,9 @@ abstract class CompilationRule(val errorListener: SlangParserErrorListener) : Sl
 class Parser(file: File) {
     var compilationUnit: SlangParser.CompilationUnitContext? = null
     var parser: SlangParser
-    val errorListener = SlangParserErrorListener()
+    private val errorListener = SlangParserErrorListener()
 
-    val compilationRules = mutableListOf<CompilationRule>()
+    private val compilationRules = mutableListOf<CompilationRule>()
 
     init {
         val input = file.inputStream().bufferedReader().use { it.readText() }
@@ -31,8 +30,8 @@ class Parser(file: File) {
         addCompilationRule(InvalidOperandsInBinaryOperator(errorListener))
     }
 
-    fun getErrors() : List<String> {
-        return errorListener.errors
+    fun getErrors() : List<Error> {
+        return errorListener.errors.sortedBy { it.line }.sortedBy { it.charPositionInLine }
     }
 
     private fun addCompilationRule(rule: CompilationRule) {
@@ -40,12 +39,16 @@ class Parser(file: File) {
     }
 
     fun parse(): SlangParser.CompilationUnitContext? {
+        // run the structs scope analyzer on the compilation unit
+        val structScopeAnalyzer = ScopeAnalyzer(errorListener)
+        structScopeAnalyzer.visit(compilationUnit)
+
         // evaluation of all compilation rules on the compilation unit should be true
         val compilationRulesStatus = compilationRules.fold(true) { acc, rule ->
             acc && rule.visit(compilationUnit)
         }
 
-        if (compilationRulesStatus == false) {
+        if (!compilationRulesStatus) {
             compilationUnit = null
         }
 
@@ -79,16 +82,20 @@ class BreakContinueChecker(errorListener: SlangParserErrorListener) : Compilatio
 
     override fun visitBreakStmt(ctx: SlangParser.BreakStmtContext): Boolean {
         if (loopContextStack.isEmpty()) {
-            errorListener.errors.add("Break statement not within a loop at line ${ctx.start.line}:${ctx.start
-                .charPositionInLine} - ${ctx.text}")
+            errorListener.errors.add(Error(ctx.start.line, ctx.start.charPositionInLine,
+                "Break statement not within a loop"))
         }
         return visitChildren(ctx)
     }
 
     override fun visitContinueStmt(ctx: SlangParser.ContinueStmtContext): Boolean {
         if (loopContextStack.isEmpty()) {
-            errorListener.errors.add("Continue statement not within a loop at line ${ctx.start.line}:${ctx.start
-                .charPositionInLine} - ${ctx.text}")
+            errorListener.errors.add(
+                Error(
+                    ctx.start.line, ctx.start.charPositionInLine,
+                    "Continue statement not within a loop"
+                )
+            )
         }
         return visitChildren(ctx)
     }
@@ -104,15 +111,21 @@ class InvalidOperandsInBinaryOperator(errorListener: SlangParserErrorListener) :
     private fun check(operand1: ParserRuleContext, operand2: ParserRuleContext, type: String) : Boolean {
         if (isInvalidOperand(operand1)) {
             errorListener.errors.add(
-                "${operand1.text} cannot be used as operand in $type expression at line " +
-                        "${operand1.start.line}:${operand1.start.charPositionInLine} - ${operand1.text}"
+                Error(
+                    operand1.start.line,
+                    operand1.start.charPositionInLine,
+                    "${operand1.text} cannot be used as operand in $type operation"
+                )
             )
             return false
         }
         if (isInvalidOperand(operand2)) {
             errorListener.errors.add(
-                "${operand2.text} function cannot be used as operand in $type expression at line " +
-                        "${operand2.start.line}:${operand2.start.charPositionInLine} - ${operand2.text}"
+                Error(
+                    operand2.start.line,
+                    operand2.start.charPositionInLine,
+                    "${operand2.text} cannot be used as operand in $type operation"
+                )
             )
             return false
         }
@@ -144,3 +157,54 @@ class InvalidOperandsInBinaryOperator(errorListener: SlangParserErrorListener) :
         return visitChildren(ctx)
     }
 }
+
+class ScopeAnalyzer(private val errorListener: SlangParserErrorListener) : SlangBaseVisitor<Nothing>() {
+    // structs are defined on the global scope. Nested structs are not supported.
+    val compilationUnitStack = ArrayDeque<SlangParser.CompilationUnitContext>()
+    var variableScopes = ArrayDeque<MutableSet<String>>()
+
+    override fun visitStructStmt(ctx: SlangParser.StructStmtContext): Nothing {
+        if (SymbolTable.structDeclarations.containsValue(ctx)) {
+            errorListener.addError(
+                ctx.start.line,
+                ctx.start.charPositionInLine,
+                "Struct ${ctx.ID().text} already declared"
+            )
+        } else {
+            val compilationUnit = compilationUnitStack.last()
+            SymbolTable.structDeclarations[compilationUnit] = ctx
+        }
+        return visitChildren(ctx)
+    }
+
+    override fun visitLetExpr(ctx: SlangParser.LetExprContext): Nothing {
+        val currentScope = variableScopes.last()
+        val id = ctx.ID().text
+        if (currentScope.contains(id)) {
+            errorListener.addError(
+                ctx.start.line,
+                ctx.start.charPositionInLine,
+                "Variable $id already declared in this scope"
+            )
+        } else {
+            currentScope.add(id)
+        }
+        return visitChildren(ctx)
+    }
+
+    override fun visitCompilationUnit(ctx: SlangParser.CompilationUnitContext): Nothing {
+        variableScopes.add(mutableSetOf())
+        compilationUnitStack.add(ctx)
+        val result = visitChildren(ctx)
+        variableScopes.removeLast()
+        return result
+    }
+
+    override fun visitBlockStmt(ctx: SlangParser.BlockStmtContext): Nothing {
+        variableScopes.add(mutableSetOf())
+        val result = visitChildren(ctx)
+        variableScopes.removeLast()
+        return result
+    }
+}
+

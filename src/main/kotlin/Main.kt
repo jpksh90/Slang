@@ -6,8 +6,6 @@ import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.versionOption
 import com.github.ajalt.clikt.parameters.types.choice
-import org.antlr.v4.runtime.ANTLRInputStream
-import org.antlr.v4.runtime.CommonTokenStream
 import org.slf4j.LoggerFactory
 import org.yaml.snakeyaml.DumperOptions
 import org.yaml.snakeyaml.Yaml
@@ -16,8 +14,6 @@ import slang.parser.Parser
 import slang.slast.*
 import java.nio.file.Files
 import java.nio.file.Paths
-import kotlin.io.path.readText
-import kotlin.math.log
 
 private const val BYTECODE_OPT = "bytecode"
 
@@ -77,7 +73,7 @@ class SlangcCLI : CliktCommand("slangc") {
         if (parseTree == null) {
             logger.error("Failed to parse the input file")
             for (error in parser.getErrors()) {
-                logger.error(error)
+                logger.error(error.toString())
             }
             return
         }
