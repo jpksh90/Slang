@@ -34,3 +34,7 @@ This program defines a higher-order function `apply_n` that applies a given func
 - `src/main/antlr/Slang.g4`: The ANTLR grammar file for Slang.
 - `src/main/kotlin/slast/ast/AstBuilder.kt`: The AST builder that constructs the abstract syntax tree from the parse tree.
 - `build/generated-src/antlr/main/SlangParser.java`: The generated parser code.
+
+## Build Status
+
+[![Build and Test](https://github.com/jpksh90/Slang/actions/workflows/build.yml/badge.svg)](https://github.com/jpksh90/Slang/actions/workflows/build.yml)
