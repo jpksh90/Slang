@@ -31,9 +31,8 @@ class Parser(file: File) {
         return errorListener.getErrorsSorted()
     }
 
-    fun parse(): Boolean {
-        return ruleManager.applyRules(compilationUnit)
-    }
+    // This method is used to parse the compilation unit and apply the rules. Basic syntax has been handled by Antlr
+    fun parse() = ruleManager.applyRules(compilationUnit)
 
     private fun initializeCompilationRules() {
         val reflections = Reflections("slang.parser")
