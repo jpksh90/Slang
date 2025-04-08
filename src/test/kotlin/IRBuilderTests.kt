@@ -79,7 +79,7 @@ class IRBuilderTests {
 
     @Test
     fun testCase7() {
-        val program = loadTestProgram("do-while.slangang")
+        val program = loadTestProgram("do-while.slang")
         if (program != null) {
             val ast = buildAst(program)
             Approvals.verify(ast)
