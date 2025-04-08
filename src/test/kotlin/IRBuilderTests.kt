@@ -25,7 +25,7 @@ class IRBuilderTests {
 
     @Test
     fun testCase1() {
-        val program = loadTestProgram("exponent.sl")
+        val program = loadTestProgram("exponent.slang")
         if (program != null) {
             val ast = buildAst(program)
             Approvals.verify(ast)
@@ -34,7 +34,7 @@ class IRBuilderTests {
 
     @Test
     fun testCase2() {
-        val program = loadTestProgram("facl.sl")
+        val program = loadTestProgram("facl.slang")
         if (program != null) {
             val ast = buildAst(program)
             Approvals.verify(ast)
@@ -43,7 +43,7 @@ class IRBuilderTests {
 
     @Test
     fun testCase3() {
-        val program = loadTestProgram("gcd.sl")
+        val program = loadTestProgram("gcd.slang")
         if (program != null) {
             val ast = buildAst(program)
             Approvals.verify(ast)
@@ -52,7 +52,7 @@ class IRBuilderTests {
 
     @Test
     fun testCase4() {
-        val program = loadTestProgram("minmax.sl")
+        val program = loadTestProgram("minmax.slang")
         if (program != null) {
             val ast = buildAst(program)
             Approvals.verify(ast)
@@ -61,7 +61,7 @@ class IRBuilderTests {
 
     @Test
     fun testCase5() {
-        val program = loadTestProgram("disallowed.sl")
+        val program = loadTestProgram("disallowed.slangang")
         if (program != null) {
             val ast = buildAst(program)
             Approvals.verify(ast)
@@ -70,7 +70,7 @@ class IRBuilderTests {
 
     @Test
     fun testCase6() {
-        val program = loadTestProgram("sum_prod.sl")
+        val program = loadTestProgram("sum_prod.slang")
         if (program != null) {
             val ast = buildAst(program)
             Approvals.verify(ast)
@@ -79,7 +79,7 @@ class IRBuilderTests {
 
     @Test
     fun testCase7() {
-        val program = loadTestProgram("do-while.sl")
+        val program = loadTestProgram("do-while.slangang")
         if (program != null) {
             val ast = buildAst(program)
             Approvals.verify(ast)
@@ -88,7 +88,7 @@ class IRBuilderTests {
 
     @Test
     fun testCase8() {
-        val program = loadTestProgram("misc.sl")
+        val program = loadTestProgram("misc.slang")
         if (program != null) {
             val ast = buildAst(program)
             Approvals.verify(ast)

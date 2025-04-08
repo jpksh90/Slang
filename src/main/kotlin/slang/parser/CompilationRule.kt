@@ -86,7 +86,7 @@ class CompilationRuleManager {
         return rules.fold(true) { acc, rule ->
             val annotation = rule::class.java.getAnnotation(ParserRule::class.java)
             if (annotation != null) {
-                logger.info("Applying rule: ${annotation.name}")
+                logger.debug("Applying rule: ${annotation.name}")
             }
             acc && rule.apply(ctx)
         }

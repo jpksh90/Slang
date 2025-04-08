@@ -7,7 +7,7 @@ import kotlin.test.Test
 class ParserTest {
     @Test
     fun test1() {
-        val file = "src/test/resources/disallowed.sl"
+        val file = "src/test/resources/disallowed.slang"
         val parser = Parser(File(file))
         assertFalse(parser.parse())
     }
