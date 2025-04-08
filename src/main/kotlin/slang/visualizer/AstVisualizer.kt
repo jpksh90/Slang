@@ -232,7 +232,7 @@ class ASTViewer : JFrame("Slang AST Visualizer") {
 
         parseButton.addActionListener {
             val code = inputArea.text
-            val file = File.createTempFile("slang_code", "sl")
+            val file = File.createTempFile("slang_code", "slang")
             file.writeText(code)
             val ast = parseProgram(file, errorListModel)
             astPanel.removeAll()
@@ -250,7 +250,7 @@ class ASTViewer : JFrame("Slang AST Visualizer") {
         openFileButton.addActionListener {
             val fileChooser = JFileChooser().apply {
                 dialogTitle = "Save Slang File"
-                fileFilter = javax.swing.filechooser.FileNameExtensionFilter("Slang Files (*.sl)", "sl")
+                fileFilter = javax.swing.filechooser.FileNameExtensionFilter("Slang Files (*.slang)", "slang")
             }
             val returnValue = fileChooser.showOpenDialog(this)
 
