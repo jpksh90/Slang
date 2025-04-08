@@ -1,6 +1,6 @@
 grammar Slang;
 
-compilationUnit  : stmt* EOF ;
+compilationUnit  : stmt* ;
 
 stmt
     : 'fun' ID '(' paramList? ')' '=>'  expr ';' #funPureStmt

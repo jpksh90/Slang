@@ -14,9 +14,10 @@ class IRBuilderTests {
 
     fun buildAst(testCase: URL): String {
         val file = File(testCase.toURI())
-        val parser = Parser(file).compilationUnit
-        if (parser != null) {
-            val irBuilder = SlastBuilder(parser).compilationUnit
+        val parser = Parser(file)
+        val result = parser.parse()
+        if (result) {
+            val irBuilder = SlastBuilder(parser.compilationUnit).compilationUnit
             return irBuilder.prettyPrint()
         }
         return ""

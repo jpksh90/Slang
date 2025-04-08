@@ -70,7 +70,7 @@ class SlangcCLI : CliktCommand("slangc") {
         val parser = Parser(file.toFile())
         val parseTree = parser.parse()
         
-        if (parseTree == null) {
+        if (parseTree.not()) {
             logger.error("Failed to parse the input file")
             for (error in parser.getErrors()) {
                 logger.error(error.toString())
@@ -79,10 +79,10 @@ class SlangcCLI : CliktCommand("slangc") {
         }
 
         if (stage == AST_OPT) {
-            println(dumpAst(parseTree))
+            println(dumpAst(parser.compilationUnit))
         }
 
-        val irTree = SlastBuilder(parseTree).compilationUnit
+        val irTree = SlastBuilder(parser.compilationUnit).compilationUnit
         if (stage == IR_OPT) {
            println(irTree.prettyPrint())
         }
