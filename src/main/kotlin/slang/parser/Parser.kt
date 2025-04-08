@@ -4,9 +4,28 @@ import SlangLexer
 import SlangParser
 import org.antlr.v4.runtime.ANTLRInputStream
 import org.antlr.v4.runtime.CommonTokenStream
+import org.antlr.v4.runtime.ParserRuleContext
 import org.reflections.Reflections
 import org.slf4j.LoggerFactory
 import java.io.File
+
+data class LineColumn(val line: Int, val column: Int) : Comparable<LineColumn> {
+    override fun compareTo(other: LineColumn): Int {
+        return if (line == other.line) {
+            column - other.column
+        } else {
+            line - other.line
+        }
+    }
+
+    override fun toString(): String {
+        return "$line:$column"
+    }
+}
+
+fun ParserRuleContext.toLineColumn(): LineColumn {
+    return LineColumn(this.start.line, this.start.charPositionInLine)
+}
 
 class Parser(file: File) {
     var compilationUnit: SlangParser.CompilationUnitContext
