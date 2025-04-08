@@ -26,7 +26,11 @@ class SlangParserErrorListener : BaseErrorListener() {
         errors.add(error)
     }
 
-    fun addError(line: Int, charPositionInLine: Int, message: String) {
-        errors.add(Error(line, charPositionInLine, message))
+    fun addError(error: Error) {
+        errors.add(error)
+    }
+
+    fun getErrorsSorted() : List<Error> {
+        return errors.sortedBy { it.line }.sortedBy { it.charPositionInLine }
     }
 }

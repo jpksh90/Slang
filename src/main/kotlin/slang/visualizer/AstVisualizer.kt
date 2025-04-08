@@ -10,6 +10,7 @@ import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
 import org.fife.ui.rsyntaxtextarea.Theme
 import org.fife.ui.rsyntaxtextarea.TokenMakerFactory
 import org.fife.ui.rtextarea.RTextScrollPane
+import slang.parser.Parser
 import slang.parser.SlangParserErrorListener
 import slang.slast.*
 import slang.slast.Function
@@ -27,18 +28,19 @@ import javax.swing.*
 import javax.swing.tree.DefaultMutableTreeNode
 
 
-fun parseProgram(input: String, errorListModel: DefaultListModel<String>): SlastNode {
-    val parser = SlangParser(CommonTokenStream(SlangLexer(ANTLRInputStream(input))))
+fun parseProgram(input: File, errorListModel: DefaultListModel<String>): SlastNode {
+//    val parser = SlangParser(CommonTokenStream(SlangLexer(ANTLRInputStream(input))))
 
-    parser.removeErrorListeners()
-    val errorListener = SlangParserErrorListener()
-    parser.addErrorListener(errorListener)
+    val parser = Parser(input)
+//    parser.removeErrorListeners()
+//    val errorListener = SlangParserErrorListener()
+//    parser.addErrorListener(errorListener)
 
-    val parseTree = parser.compilationUnit()
+    val parseTree = parser.compilationUnit
 
     SwingUtilities.invokeLater {
         errorListModel.clear()
-        errorListModel.addAll(errorListener.errors.sortedBy { it.line }.sortedBy { it.charPositionInLine }.map { it.message })
+        errorListModel.addAll(parser.getErrors().map { it.toString() })
     }
 
     val irBuilder = SlastBuilder(parseTree)
@@ -230,7 +232,9 @@ class ASTViewer : JFrame("Slang AST Visualizer") {
 
         parseButton.addActionListener {
             val code = inputArea.text
-            val ast = parseProgram(code, errorListModel)
+            val file = File.createTempFile("slang_code", "sl")
+            file.writeText(code)
+            val ast = parseProgram(file, errorListModel)
             astPanel.removeAll()
             updateTree(ast)
         }
