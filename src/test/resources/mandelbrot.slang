@@ -5,9 +5,6 @@ fun mandelbrot(c, maxIter) {
         z = z.mul(z).plus(c);
         n = n + 1;
     }
-
-    let k = 0;
-    let k = 5;
     return n;
 }
 
