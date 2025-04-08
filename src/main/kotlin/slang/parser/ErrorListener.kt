@@ -5,9 +5,9 @@ import org.antlr.v4.runtime.RecognitionException
 import org.antlr.v4.runtime.Recognizer
 
 
-data class Error(val line: Int, val charPositionInLine: Int, val message: String) {
+data class Error(val lineCol: LineColumn, val message: String) {
     override fun toString(): String {
-        return "$line:$charPositionInLine - $message"
+        return "$lineCol - $message"
     }
 }
 
@@ -22,7 +22,7 @@ class SlangParserErrorListener : BaseErrorListener() {
         msg: String?,
         e: RecognitionException?
     ) {
-        val error = Error(line, charPositionInLine, msg ?: "Unknown error")
+        val error = Error(LineColumn(line, charPositionInLine), msg ?: "Unknown error")
         errors.add(error)
     }
 
@@ -31,6 +31,6 @@ class SlangParserErrorListener : BaseErrorListener() {
     }
 
     fun getErrorsSorted() : List<Error> {
-        return errors.sortedBy { it.line }.sortedBy { it.charPositionInLine }
+        return errors.sortedBy { it.lineCol }
     }
 }

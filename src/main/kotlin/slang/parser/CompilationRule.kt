@@ -52,8 +52,8 @@ abstract class CompilationRule(private val errorListener: SlangParserErrorListen
      * @param charPositionInLine The character position in the line where the error occurred.
      * @param message The error message.
      */
-    fun logCompilationError(line: Int, charPositionInLine: Int, message: String) {
-        logCompilationError(Error(line, charPositionInLine, message))
+    fun logCompilationError(lineColumn: LineColumn, message: String) {
+        logCompilationError(Error(lineColumn, message))
     }
 }
 
