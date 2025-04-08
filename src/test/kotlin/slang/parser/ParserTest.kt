@@ -11,4 +11,11 @@ class ParserTest {
         val parser = Parser(File(file))
         assertFalse(parser.parse())
     }
+
+    @Test
+    fun test2() {
+        val file = "src/test/resources/mandelbrot.slang"
+        val parser = Parser(File(file))
+        assertTrue(parser.parse())
+    }
 }

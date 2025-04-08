@@ -28,19 +28,20 @@ import javax.swing.*
 import javax.swing.tree.DefaultMutableTreeNode
 
 
-fun parseProgram(input: File, errorListModel: DefaultListModel<String>): SlastNode {
-//    val parser = SlangParser(CommonTokenStream(SlangLexer(ANTLRInputStream(input))))
-
+fun parseProgram(input: File, errorListModel: DefaultListModel<String>, statusLabel: JLabel): SlastNode {
     val parser = Parser(input)
-//    parser.removeErrorListeners()
-//    val errorListener = SlangParserErrorListener()
-//    parser.addErrorListener(errorListener)
-
+    val status = parser.parse()
     val parseTree = parser.compilationUnit
 
     SwingUtilities.invokeLater {
         errorListModel.clear()
         errorListModel.addAll(parser.getErrors().map { it.toString() })
+    }
+
+    if (status) {
+        statusLabel.text = "Parsing failed with errors. Dumping incomplete AST"
+    } else {
+        statusLabel.text = "Parsing completed successfully"
     }
 
     val irBuilder = SlastBuilder(parseTree)
@@ -234,7 +235,7 @@ class ASTViewer : JFrame("Slang AST Visualizer") {
             val code = inputArea.text
             val file = File.createTempFile("slang_code", "slang")
             file.writeText(code)
-            val ast = parseProgram(file, errorListModel)
+            val ast = parseProgram(file, errorListModel, statusLabel)
             astPanel.removeAll()
             updateTree(ast)
         }
@@ -316,7 +317,7 @@ class ASTViewer : JFrame("Slang AST Visualizer") {
 
     private fun initializeEditor() {
         val atmf = TokenMakerFactory.getDefaultInstance() as AbstractTokenMakerFactory
-        atmf.putMapping("text/Slang", "slast.visualizer.SlangTokenMaker")
+        atmf.putMapping("text/Slang", "slang.visualizer.SlangTokenMaker")
         inputArea.syntaxEditingStyle = "text/Slang"
         errorList.cellRenderer = ErrorListCellRenderer()
     }

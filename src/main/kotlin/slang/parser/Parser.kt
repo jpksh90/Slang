@@ -23,9 +23,7 @@ data class LineColumn(val line: Int, val column: Int) : Comparable<LineColumn> {
     }
 }
 
-fun ParserRuleContext.toLineColumn(): LineColumn {
-    return LineColumn(this.start.line, this.start.charPositionInLine)
-}
+fun ParserRuleContext.lineColumn() = LineColumn(this.start.line, this.start.charPositionInLine)
 
 class Parser(file: File) {
     var compilationUnit: SlangParser.CompilationUnitContext
@@ -51,17 +49,21 @@ class Parser(file: File) {
     }
 
     // This method is used to parse the compilation unit and apply the rules. Basic syntax has been handled by Antlr
-    fun parse() = ruleManager.applyRules(compilationUnit)
+    fun parse() : Boolean {
+        ruleManager.applyRules(compilationUnit)
+        return errorListener.errors.isEmpty()
+    }
 
     private fun initializeCompilationRules() {
         val reflections = Reflections("slang.parser")
         for (rule in reflections.getSubTypesOf(CompilationRule::class.java)) {
-            val annotation = rule.getAnnotation(ParserRule::class.java)
-                ?: throw IllegalStateException("Rule ${rule.simpleName} does not have a ParserRule annotation.")
+            val annotation = rule.getAnnotation(ParserRule::class.java) ?: continue
+
             if (!annotation.enabled) {
                 logger.warn("Rule ${rule.simpleName} is not enabled.")
                 continue
             }
+
             val constructor = rule.getConstructor(SlangParserErrorListener::class.java)
             val ruleInstance = constructor.newInstance(errorListener)
             ruleManager.addRule(ruleInstance)

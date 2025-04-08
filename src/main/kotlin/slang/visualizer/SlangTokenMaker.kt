@@ -95,7 +95,7 @@ class SlangTokenMaker() : AbstractTokenMaker() {
                     continue
                 }
 
-                Token.LITERAL_NUMBER_DECIMAL_INT -> if (!c.isDigit()) {
+                Token.LITERAL_NUMBER_DECIMAL_INT -> if (!c.isDigit() && c != '.') {
                     addToken(text, currentTokenStart, i - 1, Token.LITERAL_NUMBER_DECIMAL_INT, newStartOffset + currentTokenStart)
                     currentTokenStart = i
                     currentTokenType = Token.NULL

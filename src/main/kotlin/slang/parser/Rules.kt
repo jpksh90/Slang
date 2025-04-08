@@ -25,13 +25,13 @@ class BreakContinueChecker(errorListener: SlangParserErrorListener) : Compilatio
 
     override fun enterBreakStmt(ctx: SlangParser.BreakStmtContext) {
         if (loopContextStack.isEmpty()) {
-            logCompilationError(ctx.toLineColumn(), "Break statement not within a loop")
+            logCompilationError(ctx.lineColumn(), "Break statement not within a loop")
         }
     }
 
     override fun enterContinueStmt(ctx: SlangParser.ContinueStmtContext) {
         if (loopContextStack.isEmpty()) {
-            logCompilationError(ctx.toLineColumn(), "Continue statement not within a loop")
+            logCompilationError(ctx.lineColumn(), "Continue statement not within a loop")
         }
     }
 }
@@ -46,10 +46,10 @@ class InvalidOperandsInBinaryOperator(errorListener: SlangParserErrorListener) :
 
     private fun validateOperands(operand1: ParserRuleContext, operand2: ParserRuleContext, type: String) {
         if (isInvalidOperand(operand1)) {
-            logCompilationError(operand1.toLineColumn(), "${operand1.text} cannot be used as operand in $type operation")
+            logCompilationError(operand1.lineColumn(), "${operand1.text} cannot be used as operand in $type operation")
         }
         if (isInvalidOperand(operand2)) {
-            logCompilationError(operand2.toLineColumn(), "${operand2.text} cannot be used as operand in $type operation")
+            logCompilationError(operand2.lineColumn(), "${operand2.text} cannot be used as operand in $type operation")
         }
     }
 
@@ -80,7 +80,7 @@ class ValidateScope(errorListener: SlangParserErrorListener) : CompilationRule(e
 
     override fun enterStructStmt(ctx: SlangParser.StructStmtContext) {
         if (SymbolTable.structDeclarations.containsValue(ctx)) {
-            logCompilationError(ctx.toLineColumn(), "Struct ${ctx.ID().text} already declared")
+            logCompilationError(ctx.lineColumn(), "Struct ${ctx.ID().text} already declared")
         } else {
             val compilationUnit = compilationUnitStack.last()
             SymbolTable.structDeclarations[compilationUnit] = ctx
@@ -91,7 +91,7 @@ class ValidateScope(errorListener: SlangParserErrorListener) : CompilationRule(e
         val currentScope = variableScopes.last()
         val id = ctx.ID().text
         if (currentScope.contains(id)) {
-            logCompilationError(ctx.toLineColumn(), "Variable $id already declared in this scope")
+            logCompilationError(ctx.lineColumn(), "Variable $id already declared in this scope")
         } else {
             currentScope.add(id)
         }

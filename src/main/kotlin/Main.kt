@@ -23,7 +23,7 @@ private const val IR_OPT = "ir"
 
 class SlangcCLI : CliktCommand("slangc") {
 
-    private val logger = LoggerFactory.getLogger(this::class.java)
+    private val logger = LoggerFactory.getLogger("slangc")
 
     private val inputFile by argument(help = "Input file")
     private val stage by option("-o", "--output-format", help = "Run till stage").choice(AST_OPT, BYTECODE_OPT, IR_OPT)

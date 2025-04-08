@@ -198,7 +198,7 @@ fun SlastNode.prettyPrint(tabStop: Int = 0): String {
         is DerefExpr -> "deref(${expr.prettyPrint()})"
         is RefExpr -> "ref(${expr.prettyPrint()})"
         is DerefStmt -> "$indent deref(${lhs.prettyPrint()}) = ${rhs.prettyPrint()};"
-        is FieldAccess -> "${lhs.prettyPrint()}.${rhs}"
+        is FieldAccess -> "${lhs.prettyPrint()}.${rhs.prettyPrint()}"
         is StructStmt -> "$indent struct $id {\n" + functions.joinToString("\n") { it.prettyPrint(tabStop + 1) } +
                 "\n$indent}" + fields.entries.joinToString("\n") { "$indent ${it.key} : ${it.value.prettyPrint()}" }
 
