@@ -38,3 +38,49 @@ This program defines a higher-order function `apply_n` that applies a given func
 ## Build Status
 
 [![Build and Test](https://github.com/jpksh90/Slang/actions/workflows/build.yml/badge.svg)](https://github.com/jpksh90/Slang/actions/workflows/build.yml)
+
+To build the code for the Slang project, follow these steps:
+
+1. **Ensure Prerequisites**:
+    - Install [Java Development Kit (JDK)](https://adoptopenjdk.net/) version 21 or higher.
+    - Install [Gradle](https://gradle.org/) or use the Gradle wrapper (`gradlew`) included in the project.
+
+2. **Clone the Repository**:
+   Clone the project repository to your local machine:
+   ```sh
+   git clone https://github.com/jpksh90/Slang.git
+   cd Slang
+   ```
+
+3. **Build the Project**:
+   Use the Gradle wrapper to build the project:
+   ```sh
+   ./gradlew build
+   ```
+
+   On Windows, use:
+   ```cmd
+   gradlew.bat build
+   ```
+
+4. **Run Tests**:
+   To ensure everything is working correctly, run the tests:
+   ```sh
+   ./gradlew test
+   ```
+
+5. **Generated Files**:
+    - The compiled classes will be located in the `build/classes` directory.
+    - Test reports will be available in `build/reports/tests`.
+
+## Run the Application
+
+To run the Slang application using the provided `slangc` script, follow these command:
+
+```bash
+./slangc <input-file>
+## For example:  
+./slangc src/test/resources/mandelbrot.slang
+```
+
+The script will compile the code and run it. 
