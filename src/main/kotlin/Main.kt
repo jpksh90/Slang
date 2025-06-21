@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory
 import org.yaml.snakeyaml.DumperOptions
 import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.nodes.Tag
-import slang.parser.Parser
+import slang.parser.FileParserInterface
 import slang.slast.*
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -67,7 +67,7 @@ class SlangcCLI : CliktCommand("slangc") {
             return
         }
 
-        val parser = Parser(file.toFile())
+        val parser = FileParserInterface(file.toFile())
         val parseTree = parser.parse()
         
         if (parseTree.not()) {

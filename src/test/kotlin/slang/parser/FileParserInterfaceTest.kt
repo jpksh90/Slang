@@ -4,18 +4,18 @@ import org.junit.jupiter.api.Assertions.*
 import java.io.File
 import kotlin.test.Test
 
-class ParserTest {
+class FileParserInterfaceTest {
     @Test
     fun test1() {
         val file = "src/test/resources/disallowed.slang"
-        val parser = Parser(File(file))
+        val parser = FileParserInterface(File(file))
         assertFalse(parser.parse())
     }
 
     @Test
     fun test2() {
         val file = "src/test/resources/mandelbrot.slang"
-        val parser = Parser(File(file))
+        val parser = FileParserInterface(File(file))
         assertTrue(parser.parse())
     }
 }

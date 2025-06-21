@@ -1,5 +1,5 @@
 import org.approvaltests.Approvals
-import slang.parser.Parser
+import slang.parser.FileParserInterface
 import slang.slast.SlastBuilder
 import slang.slast.prettyPrint
 import java.io.File
@@ -14,7 +14,7 @@ class IRBuilderTests {
 
     fun buildAst(testCase: URL): String {
         val file = File(testCase.toURI())
-        val parser = Parser(file)
+        val parser = FileParserInterface(file)
         val result = parser.parse()
         if (result) {
             val irBuilder = SlastBuilder(parser.compilationUnit).compilationUnit

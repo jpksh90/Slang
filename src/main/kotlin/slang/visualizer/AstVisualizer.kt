@@ -1,17 +1,12 @@
 package slang.visualizer
 
-import SlangLexer
-import SlangParser
 import com.formdev.flatlaf.FlatDarculaLaf
-import org.antlr.v4.runtime.ANTLRInputStream
-import org.antlr.v4.runtime.CommonTokenStream
 import org.fife.ui.rsyntaxtextarea.AbstractTokenMakerFactory
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
 import org.fife.ui.rsyntaxtextarea.Theme
 import org.fife.ui.rsyntaxtextarea.TokenMakerFactory
 import org.fife.ui.rtextarea.RTextScrollPane
-import slang.parser.Parser
-import slang.parser.SlangParserErrorListener
+import slang.parser.StringParserInterface
 import slang.slast.*
 import slang.slast.Function
 import java.awt.BorderLayout
@@ -28,8 +23,8 @@ import javax.swing.*
 import javax.swing.tree.DefaultMutableTreeNode
 
 
-fun parseProgram(input: File, errorListModel: DefaultListModel<String>, statusLabel: JLabel): SlastNode {
-    val parser = Parser(input)
+fun parseProgram(input: String, errorListModel: DefaultListModel<String>, statusLabel: JLabel): SlastNode {
+    val parser = StringParserInterface(input)
     val status = parser.parse()
     val parseTree = parser.compilationUnit
 
@@ -233,9 +228,7 @@ class ASTViewer : JFrame("Slang AST Visualizer") {
 
         parseButton.addActionListener {
             val code = inputArea.text
-            val file = File.createTempFile("slang_code", "slang")
-            file.writeText(code)
-            val ast = parseProgram(file, errorListModel, statusLabel)
+            val ast = parseProgram(code, errorListModel, statusLabel)
             astPanel.removeAll()
             updateTree(ast)
         }

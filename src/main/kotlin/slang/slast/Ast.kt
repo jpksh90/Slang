@@ -10,7 +10,7 @@ data class SourceCodeInfo(val lineStart: Int, val lineEnd: Int, val columnStart:
 val noSourceCodeInfo = SourceCodeInfo(-1, -1, -1, -1)
 
 sealed class SlastNode {
-    open fun<T> accept(visitor: ASTVisitor<T?>): T? {
+    open fun<T> accept(visitor: ASTVisitor<T>): T {
         return when (this) {
             is LetStmt -> visitor.visitLetStmt(this)
             is AssignStmt -> visitor.visitAssignStmt(this)
@@ -104,28 +104,29 @@ data class CompilationUnit(val stmt: List<Stmt>) : SlastNode() {
 // Statements
 sealed class Stmt : SlastNode()
 data class LetStmt(val name: String, val expr: Expr) : Stmt() {
-    override fun <T> accept(visitor: ASTVisitor<T?>): T? {
+    override fun <T> accept(visitor: ASTVisitor<T>): T {
         return expr.accept(visitor)
     }
 }
 
 data class AssignStmt(val lhs: Expr, val expr: Expr) : Stmt() {
-    override fun <T> accept(visitor: ASTVisitor<T?>): T? {
+    override fun <T> accept(visitor: ASTVisitor<T>): T {
         return expr.accept(visitor)
     }
 }
 
 data class WhileStmt(val condition: Expr, val body: BlockStmt) : Stmt() {
-    override fun <T> accept(visitor: ASTVisitor<T?>): T? {
+    override fun <T> accept(visitor: ASTVisitor<T>): T {
         return body.accept(visitor)
     }
 }
 
 data class PrintStmt(val args: List<Expr>) : Stmt() {
-    override fun <T> accept(visitor: ASTVisitor<T?>): T? {
-        return null
+    override fun <T> accept(visitor: ASTVisitor<T>): T {
+        return args[0].accept(visitor)
     }
 }
+
 data class IfStmt(val condition: Expr, val thenBody: BlockStmt, val elseBody: BlockStmt) : Stmt()
 data class ExprStmt(val expr: Expr) : Stmt()
 data class ReturnStmt(val expr: Expr) : Stmt()
@@ -158,13 +159,13 @@ data class NamedFunctionCall(val name: String, val arguments: List<Expr>) : Func
 data class ExpressionFunctionCall(val target: Expr, val arguments: List<Expr>) : FuncCallExpr()
 
 data class InlinedFunction(val params: List<String>, val body: BlockStmt) : Expr() {
-    override fun <T> accept(visitor: ASTVisitor<T?>): T? {
+    override fun <T> accept(visitor: ASTVisitor<T>): T {
         return body.accept(visitor)
     }
 }
 
 data class Function(val name: String, val params: List<String>, val body: BlockStmt) : Stmt() {
-    override fun <T> accept(visitor: ASTVisitor<T?>): T? {
+    override fun <T> accept(visitor: ASTVisitor<T>): T {
         return body.accept(visitor)
     }
 }
