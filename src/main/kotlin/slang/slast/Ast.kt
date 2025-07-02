@@ -211,13 +211,48 @@ fun SlastNode.prettyPrint(tabStop: Int = 0): String {
         is Continue -> "$indent continue;"
     }
 }
-//fun ASTNode.isFunctionDeclaration(): Boolean {
-//    return when (this) {
-//        is FunPureStmt -> true
-//        is FunImpureStmt -> true
-//        else -> false
-//    }
-//}
+
+fun SlastNode.fold() : SlastNode {
+    return when (this) {
+        is BlockStmt -> {
+            // Recursively fold all statements in the block
+            val foldedStmts = stmts.map { it.fold() }
+            // Flatten nested BlockStmts
+            val flatStmts = foldedStmts.flatMap {
+                if (it is BlockStmt) it.stmts else listOf(it)
+            }.map { it }
+            BlockStmt(flatStmts.map { it as Stmt })
+        }
+        is CompilationUnit -> CompilationUnit(stmt.map { it.fold() as Stmt })
+        is Function -> Function(name, params, body.fold() as BlockStmt)
+        is InlinedFunction -> InlinedFunction(params, body.fold() as BlockStmt)
+        is WhileStmt -> WhileStmt(condition.fold() as Expr, body.fold() as BlockStmt)
+        is IfStmt -> IfStmt(condition.fold() as Expr, thenBody.fold() as BlockStmt, elseBody.fold() as BlockStmt)
+        is StructStmt -> StructStmt(id, functions.map { it.fold() as Function }, HashMap(fields.mapValues { it.value.fold() as Expr }))
+        is ExprStmt -> ExprStmt(expr.fold() as Expr)
+        is LetStmt -> LetStmt(name, expr.fold() as Expr)
+        is AssignStmt -> AssignStmt(lhs.fold() as Expr, expr.fold() as Expr)
+        is PrintStmt -> PrintStmt(args.map { it.fold() as Expr })
+        is ReturnStmt -> ReturnStmt(expr.fold() as Expr)
+        is DerefStmt -> DerefStmt(lhs.fold() as Expr, rhs.fold() as Expr)
+        is BinaryExpr -> BinaryExpr(left.fold() as Expr, op, right.fold() as Expr)
+        is IfExpr -> IfExpr(condition.fold() as Expr, thenExpr.fold() as Expr, elseExpr.fold() as Expr)
+        is ParenExpr -> ParenExpr(expr.fold() as Expr)
+        is Record -> Record(expression.map { it.first to it.second.fold() as Expr })
+        is FieldAccess -> FieldAccess(lhs.fold() as Expr, rhs.fold() as Expr)
+        is ArrayInit -> ArrayInit(elements.map { it.fold() as Expr })
+        is ArrayAccess -> ArrayAccess(array.fold() as Expr, index.fold() as Expr)
+        is FuncCallExpr -> when (this) {
+            is NamedFunctionCall -> NamedFunctionCall(name, arguments.map { it.fold() as Expr })
+            is ExpressionFunctionCall -> ExpressionFunctionCall(target.fold() as Expr, arguments.map { it.fold() as Expr })
+        }
+        is RefExpr -> RefExpr(expr.fold() as Expr)
+        is DerefExpr -> DerefExpr(expr.fold() as Expr)
+        // Leaf nodes
+        is NumberLiteral, is BoolLiteral, is VarExpr, ReadInputExpr, NoneValue, is StringLiteral, Break, Continue -> this
+    }
+}
+
 
 
 fun main() {
@@ -241,10 +276,11 @@ fun main() {
     val parser = SlangParser(tokens)
 
     val parseTree = parser.compilationUnit()
-    val IRBuilder = IRBuilder()
+    val IRBuilder = SlastBuilder.IRBuilder()
     val ast = IRBuilder.visit(parseTree) as CompilationUnit
 //    print(ast.collectFunctionDeclarations())
     println(ast.prettyPrint())
+    println(ast.fold())
 //    print(prettyPrintAST(ast))
 //
 //    val collectFunctions = ASTVisitor<List<String>> {

@@ -17,8 +17,10 @@ dependencies {
     implementation("com.fifesoft:rsyntaxtextarea:3.3.3")
     implementation("com.formdev:flatlaf:3.5.4")
     testImplementation("com.approvaltests:approvaltests:23.0.0")
+
     implementation("org.ow2.asm:asm:9.6")
     implementation("org.ow2.asm:asm-util:9.6") // Optional, for utilities
+
     implementation("com.github.ajalt.clikt:clikt:5.0.3")
     implementation("org.slf4j:slf4j-api:2.0.12")
     implementation("ch.qos.logback:logback-classic:1.5.0")
@@ -32,6 +34,9 @@ dependencies {
 
     implementation("org.ow2.asm:asm:9.6")
     implementation("org.ow2.asm:asm-util:9.6") // Optional, for utilities
+
+    implementation("org.javassist:javassist:3.29.2-GA")
+
 
 }
 
