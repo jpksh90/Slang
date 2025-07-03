@@ -1,4 +1,4 @@
-package slang.codegen
+package codegen
 //
 //import org.objectweb.asm.ClassWriter
 //import org.objectweb.asm.MethodVisitor

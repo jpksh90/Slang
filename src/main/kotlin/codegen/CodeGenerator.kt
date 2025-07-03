@@ -1,4 +1,4 @@
-package slang.codegen
+package codegen
 
 import org.objectweb.asm.Opcodes.ACC_PUBLIC
 import org.objectweb.asm.Opcodes.ACC_STATIC

@@ -1,4 +1,4 @@
-package slang.typesystem
+package typesystem
 
 sealed class SlastType {
     abstract fun lub(other: SlastType) : SlastType

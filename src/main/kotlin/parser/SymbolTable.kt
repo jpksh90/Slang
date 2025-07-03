@@ -1,4 +1,4 @@
-package slang.parser
+package parser
 
 object SymbolTable {
     val structDeclarations = mutableMapOf<SlangParser.CompilationUnitContext, SlangParser.StructStmtContext>()

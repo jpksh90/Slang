@@ -1,4 +1,4 @@
-package slang.repl
+package repl
 
 import slang.parser.StringParserInterface
 import slang.slast.*
@@ -18,7 +18,7 @@ class Repl {
             if (input == "exit") break
             try {
                 val program = StringParserInterface(input)
-                val ast = SlastBuilder(program.compilationUnit).compilationUnit
+                val ast = slast.SlastBuilder(program.compilationUnit).compilationUnit
                 interpreter.interpret(ast)
             } catch (e: Exception) {
                 println("Error: ${e.message}")

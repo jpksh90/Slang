@@ -1,4 +1,4 @@
-package slang.slast
+package slast
 
 interface ASTVisitor<T> {
     fun visitLetStmt(stmt: LetStmt): T

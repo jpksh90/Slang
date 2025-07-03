@@ -1,4 +1,4 @@
-package slang.parser
+package parser
 
 import SlangLexer
 import SlangParser

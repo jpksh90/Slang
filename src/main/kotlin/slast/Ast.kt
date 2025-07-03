@@ -1,4 +1,4 @@
-package slang.slast
+package slast
 
 import SlangLexer
 import SlangParser
@@ -276,7 +276,7 @@ fun main() {
     val parser = SlangParser(tokens)
 
     val parseTree = parser.compilationUnit()
-    val IRBuilder = SlastBuilder.IRBuilder()
+    val IRBuilder = slast.SlastBuilder.IRBuilder()
     val ast = IRBuilder.visit(parseTree) as CompilationUnit
 //    print(ast.collectFunctionDeclarations())
     println(ast.prettyPrint())

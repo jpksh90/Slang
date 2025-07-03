@@ -1,4 +1,4 @@
-package slang.visualizer
+package visualizer
 
 import com.formdev.flatlaf.FlatDarculaLaf
 import org.fife.ui.rsyntaxtextarea.AbstractTokenMakerFactory
@@ -39,7 +39,7 @@ fun parseProgram(input: String, errorListModel: DefaultListModel<String>, status
         statusLabel.text = "Parsing completed successfully"
     }
 
-    val irBuilder = SlastBuilder(parseTree)
+    val irBuilder = _root_ide_package_.slast.SlastBuilder(parseTree)
     val ast = irBuilder.compilationUnit
     return ast
 }

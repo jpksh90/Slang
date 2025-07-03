@@ -1,4 +1,4 @@
-package slang.parser
+package parser
 
 import SlangBaseListener
 import org.antlr.v4.runtime.ParserRuleContext

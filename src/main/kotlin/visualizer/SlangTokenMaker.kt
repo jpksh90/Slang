@@ -1,4 +1,4 @@
-package slang.visualizer
+package visualizer
 
 import org.fife.ui.rsyntaxtextarea.AbstractTokenMaker
 import org.fife.ui.rsyntaxtextarea.Token

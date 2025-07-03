@@ -1,4 +1,4 @@
-package slang.codegen.dsl
+package codegen.dsl
 
 import javassist.ClassPool
 import javassist.CtClass

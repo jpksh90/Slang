@@ -1,4 +1,4 @@
-package slang.repl
+package repl
 
 
 enum class Type {

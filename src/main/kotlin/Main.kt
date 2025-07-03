@@ -79,7 +79,7 @@ class SlangcCLI : CliktCommand("slangc") {
             println(dumpAst(parser.compilationUnit))
         }
 
-        val irBuilder = SlastBuilder.IRBuilder()
+        val irBuilder = slast.SlastBuilder.IRBuilder()
         val irTree = irBuilder.visit(parser.compilationUnit)
         if (stage == IR_OPT) {
            println(irTree.prettyPrint())

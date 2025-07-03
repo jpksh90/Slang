@@ -4,7 +4,7 @@ import org.approvaltests.Approvals
 import slast.ast.IRBuilder
 import slast.ast.prettyPrint
 import slang.parser.FileParserInterface
-import slang.slast.SlastBuilder
+import slast.SlastBuilder
 import slang.slast.prettyPrint
 import java.io.File
 import java.net.URL
