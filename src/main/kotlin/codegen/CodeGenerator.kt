@@ -79,6 +79,34 @@ class BytecodeGenVisitor(
         mv.visitLdcInsn(expr.value)
     }
 
+    override fun visitRefExpr(expr: RefExpr) {
+        TODO("Not yet implemented")
+    }
+
+    override fun visitDerefExpr(expr: DerefExpr) {
+        TODO("Not yet implemented")
+    }
+
+    override fun visitDerefStmt(stmt: DerefStmt) {
+        TODO("Not yet implemented")
+    }
+
+    override fun visitFieldAccessExpr(expr: FieldAccess) {
+        TODO("Not yet implemented")
+    }
+
+    override fun visitStructStmt(expr: StructStmt) {
+        TODO("Not yet implemented")
+    }
+
+    override fun visitArrayInit(expr: ArrayInit) {
+        TODO("Not yet implemented")
+    }
+
+    override fun visitArrayAccess(expr: ArrayAccess) {
+        TODO("Not yet implemented")
+    }
+
     override fun visitReadInputExpr(expr: ReadInputExpr) {
         // Read a single int from System.in (simplified)
         mv.visitFieldInsn(GETSTATIC, "java/lang/System", "in", "Ljava/io/InputStream;")
