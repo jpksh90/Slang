@@ -278,7 +278,14 @@ class Interpreter {
                 val args = expr.arguments.map { evaluateExpr(it, env) }
                 callFunction(function, args)
             }
-            else -> throw RuntimeException("Unsupported expression type: ${expr::class.simpleName} at ${expr.sourceCodeInfo}")
+            else -> {
+                val location = if (expr.sourceCodeInfo.lineStart >= 0) {
+                    " at line ${expr.sourceCodeInfo.lineStart}"
+                } else {
+                    ""
+                }
+                throw RuntimeException("Unsupported expression type: ${expr::class.simpleName}$location")
+            }
         }
     }
 
