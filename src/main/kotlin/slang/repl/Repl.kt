@@ -67,7 +67,7 @@ class Interpreter {
     
     fun interpret(program: CompilationUnit, state: InterpreterState = InterpreterState()): InterpreterState {
         return program.stmt.fold(state) { currentState, stmt ->
-            val (newState, _) = this.executeStmt(stmt, currentState)
+            val (newState, _) = executeStmt(stmt, currentState)
             newState
         }
     }
