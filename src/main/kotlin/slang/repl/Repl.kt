@@ -119,7 +119,10 @@ class Interpreter {
                         if (arrayValue is Value.ArrayValue && indexValue is Value.NumberValue) {
                             val index = indexValue.value.toInt()
                             if (index >= 0 && index < arrayValue.elements.size) {
-                                val updatedElements = arrayValue.elements.toMutableList().apply { set(index, value) }
+                                // Functional update: create new list with updated element
+                                val updatedElements = arrayValue.elements.mapIndexed { i, elem -> 
+                                    if (i == index) value else elem 
+                                }
                                 val updatedArray = Value.ArrayValue(updatedElements)
                                 when (val target = lhs.array) {
                                     is VarExpr -> stateAfterIndex.copy(
