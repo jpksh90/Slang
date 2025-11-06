@@ -320,6 +320,21 @@ class SlastBuilder(ctx: SlangParser.CompilationUnitContext) {
             return expr
         }
 
+        override fun visitArrayLiteralExpression(ctx: SlangParser.ArrayLiteralExpressionContext): SlastNode {
+            val elements = ctx.exprList()?.expr()?.map { visit(it) as Expr } ?: emptyList()
+            val expr = ArrayInit(elements)
+            expr.sourceCodeInfo = createSourceCodeInfo(ctx)
+            return expr
+        }
+
+        override fun visitArrayAccessExpr(ctx: SlangParser.ArrayAccessExprContext): SlastNode {
+            val array = visit(ctx.expr(0)) as Expr
+            val index = visit(ctx.expr(1)) as Expr
+            val expr = ArrayAccess(array, index)
+            expr.sourceCodeInfo = createSourceCodeInfo(ctx)
+            return expr
+        }
+
         override fun visitBreakStmt(ctx: SlangParser.BreakStmtContext?): SlastNode {
             return Break
         }
