@@ -67,12 +67,14 @@ class Interpreter {
     
     fun interpret(program: CompilationUnit, state: InterpreterState = InterpreterState()): InterpreterState {
         return program.stmt.fold(state) { currentState, stmt ->
-            val (newState, _) = executeStmt(stmt, currentState)
+            val (newState, _) = this.executeStmt(stmt, currentState)
             newState
         }
     }
+}
 
-    private fun executeStmt(stmt: Stmt, state: InterpreterState): Pair<InterpreterState, ControlFlow> {
+// Extension function for executing statements
+private fun Interpreter.executeStmt(stmt: Stmt, state: InterpreterState): Pair<InterpreterState, ControlFlow> {
         return when (stmt) {
             is LetStmt -> {
                 val (newState, value) = evaluateExpr(stmt.expr, state)
@@ -234,7 +236,8 @@ class Interpreter {
         }
     }
 
-    private fun evaluateExpr(expr: Expr, state: InterpreterState): Pair<InterpreterState, Value> {
+// Extension function for evaluating expressions
+private fun Interpreter.evaluateExpr(expr: Expr, state: InterpreterState): Pair<InterpreterState, Value> {
         return when (expr) {
             is NumberLiteral -> Pair(state, Value.NumberValue(expr.value))
             
@@ -385,7 +388,8 @@ class Interpreter {
         }
     }
 
-    private fun callFunction(function: Value, args: List<Value>, state: InterpreterState, functionName: String? = null): Pair<InterpreterState, Value> {
+// Helper function for calling functions
+private fun Interpreter.callFunction(function: Value, args: List<Value>, state: InterpreterState, functionName: String? = null): Pair<InterpreterState, Value> {
         if (function !is Value.FunctionValue) {
             throw RuntimeException("Expected function value")
         }
@@ -413,7 +417,8 @@ class Interpreter {
         return Pair(state.copy(heap = finalState.heap, nextRef = finalState.nextRef), returnValue)
     }
 
-    private fun evaluateBinaryOp(left: Value, op: Operator, right: Value): Value {
+// Helper function for evaluating binary operations (pure function, no state needed)
+private fun evaluateBinaryOp(left: Value, op: Operator, right: Value): Value {
         return when (op) {
             Operator.PLUS -> {
                 when {
@@ -506,7 +511,8 @@ class Interpreter {
         }
     }
 
-    private fun valuesEqual(left: Value, right: Value): Boolean {
+// Helper function for comparing values (pure function)
+private fun valuesEqual(left: Value, right: Value): Boolean {
         return when {
             left is Value.NumberValue && right is Value.NumberValue -> left.value == right.value
             left is Value.BoolValue && right is Value.BoolValue -> left.value == right.value
@@ -516,7 +522,8 @@ class Interpreter {
         }
     }
 
-    private fun valueToString(value: Value): String {
+// Helper function for converting values to strings (pure function)
+private fun valueToString(value: Value): String {
         return when (value) {
             is Value.NumberValue -> {
                 // Format numbers nicely (remove .0 for integers)
@@ -535,4 +542,3 @@ class Interpreter {
             is Value.NoneValue -> "None"
         }
     }
-}
