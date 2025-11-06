@@ -278,7 +278,7 @@ class Interpreter {
                 val args = expr.arguments.map { evaluateExpr(it, env) }
                 callFunction(function, args)
             }
-            else -> throw RuntimeException("Unknown expression type: ${expr::class.simpleName}")
+            else -> throw RuntimeException("Unsupported expression type: ${expr::class.simpleName} at ${expr.sourceCodeInfo}")
         }
     }
 
