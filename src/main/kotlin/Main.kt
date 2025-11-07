@@ -11,7 +11,7 @@ import org.yaml.snakeyaml.DumperOptions
 import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.nodes.Tag
 import slang.parser.FileParserInterface
-import slang.repl.Interpreter
+import slang.repl.ConcreteInterpreter
 import slang.slast.*
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -91,7 +91,7 @@ class SlangcCLI : CliktCommand("slangc") {
         }
 
         if (stage == RUN_OPT) {
-            val interpreter = Interpreter()
+            val interpreter = ConcreteInterpreter()
             try {
                 interpreter.interpret(irTree)
             } catch (e: Exception) {
