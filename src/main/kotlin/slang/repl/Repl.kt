@@ -6,38 +6,38 @@ import slang.slast.Function
 
 const val PROMPT = "> "
 
-sealed class Value {
-    data class NumberValue(val value: Double) : Value()
-    data class BoolValue(val value: Boolean) : Value()
-    data class StringValue(val value: String) : Value()
-    data class FunctionValue(val params: List<String>, val body: BlockStmt, val closure: Map<String, Value>) : Value()
-    data class RecordValue(val fields: Map<String, Value>) : Value()
-    data class ArrayValue(val elements: List<Value>) : Value()
-    data class RefValue(val ref: Int) : Value()
-    object NoneValue : Value()
+sealed class ConcreteValue {
+    data class NumberValue(val value: Double) : ConcreteValue()
+    data class BoolValue(val value: Boolean) : ConcreteValue()
+    data class StringValue(val value: String) : ConcreteValue()
+    data class FunctionValue(val params: List<String>, val body: BlockStmt, val closure: Map<String, ConcreteValue>) : ConcreteValue()
+    data class RecordValue(val fields: Map<String, ConcreteValue>) : ConcreteValue()
+    data class ArrayValue(val elements: List<ConcreteValue>) : ConcreteValue()
+    data class RefValue(val ref: Int) : ConcreteValue()
+    object NoneValue : ConcreteValue()
 }
 
 // Functional control flow results
-sealed class ControlFlow {
-    data class Normal(val value: Value = Value.NoneValue) : ControlFlow()
-    data class Return(val value: Value) : ControlFlow()
-    object Break : ControlFlow()
-    object Continue : ControlFlow()
+sealed class ControlFlow<T> {
+    data class Normal<T>(val value: T) : ControlFlow<T>()
+    data class Return<T>(val value: T) : ControlFlow<T>()
+    class Break<T> : ControlFlow<T>()
+    class Continue<T> : ControlFlow<T>()
 }
 
 // Interpreter state with immutable data structures
-data class InterpreterState(
-    val env: Map<String, Value> = emptyMap(),
-    val heap: Map<Int, Value> = emptyMap(),
+data class InterpreterState<T>(
+    val env: Map<String, T> = emptyMap(),
+    val heap: Map<Int, T> = emptyMap(),
     val nextRef: Int = 0
 )
 
 class Repl {
-    private val interpreter = Interpreter()
+    private val interpreter = ConcreteInterpreter()
 
     fun start() {
         println("Welcome to the Slang REPL!")
-        tailrec fun loop(state: InterpreterState): Unit {
+        tailrec fun loop(state: InterpreterState<ConcreteValue>): Unit {
             print(PROMPT)
             val input = readlnOrNull() ?: return
             if (input.trim().isEmpty()) return loop(state)
@@ -63,9 +63,13 @@ fun main() {
     repl.start()
 }
 
-class Interpreter {
+abstract class Interpreter<T> {
     
-    fun interpret(program: CompilationUnit, state: InterpreterState = InterpreterState()): InterpreterState {
+    abstract fun executeStmt(stmt: Stmt, state: InterpreterState<T>): Pair<InterpreterState<T>, ControlFlow<T>>
+    
+    abstract fun evaluateExpr(expr: Expr, state: InterpreterState<T>): Pair<InterpreterState<T>, T>
+    
+    fun interpret(program: CompilationUnit, state: InterpreterState<T> = InterpreterState()): InterpreterState<T> {
         return program.stmt.fold(state) { currentState, stmt ->
             val (newState, _) = executeStmt(stmt, currentState)
             newState
@@ -73,8 +77,19 @@ class Interpreter {
     }
 }
 
-// Extension function for executing statements
-private fun Interpreter.executeStmt(stmt: Stmt, state: InterpreterState): Pair<InterpreterState, ControlFlow> {
+class ConcreteInterpreter : Interpreter<ConcreteValue>() {
+    
+    override fun executeStmt(stmt: Stmt, state: InterpreterState<ConcreteValue>): Pair<InterpreterState<ConcreteValue>, ControlFlow<ConcreteValue>> {
+        return executeStmtImpl(stmt, state)
+    }
+    
+    override fun evaluateExpr(expr: Expr, state: InterpreterState<ConcreteValue>): Pair<InterpreterState<ConcreteValue>, ConcreteValue> {
+        return evaluateExprImpl(expr, state)
+    }
+}
+
+// Function for executing statements with ConcreteValue
+private fun ConcreteInterpreter.executeStmtImpl(stmt: Stmt, state: InterpreterState<ConcreteValue>): Pair<InterpreterState<ConcreteValue>, ControlFlow<ConcreteValue>> {
         return when (stmt) {
             is LetStmt -> {
                 val (newState, value) = evaluateExpr(stmt.expr, state)
@@ -94,7 +109,7 @@ private fun Interpreter.executeStmt(stmt: Stmt, state: InterpreterState): Pair<I
                     }
                     is DerefExpr -> {
                         val (stateAfterDeref, refValue) = evaluateExpr(lhs.expr, stateAfterExpr)
-                        if (refValue is Value.RefValue) {
+                        if (refValue is ConcreteValue.RefValue) {
                             stateAfterDeref.copy(heap = stateAfterDeref.heap + (refValue.ref to value))
                         } else {
                             throw RuntimeException("Expected reference in deref assignment")
@@ -102,9 +117,9 @@ private fun Interpreter.executeStmt(stmt: Stmt, state: InterpreterState): Pair<I
                     }
                     is FieldAccess -> {
                         val (stateAfterRecord, record) = evaluateExpr(lhs.lhs, stateAfterExpr)
-                        if (record is Value.RecordValue && lhs.rhs is VarExpr) {
+                        if (record is ConcreteValue.RecordValue && lhs.rhs is VarExpr) {
                             val updatedFields = record.fields + (lhs.rhs.name to value)
-                            val updatedRecord = Value.RecordValue(updatedFields)
+                            val updatedRecord = ConcreteValue.RecordValue(updatedFields)
                             when (val target = lhs.lhs) {
                                 is VarExpr -> stateAfterRecord.copy(
                                     env = stateAfterRecord.env + (target.name to updatedRecord)
@@ -118,14 +133,14 @@ private fun Interpreter.executeStmt(stmt: Stmt, state: InterpreterState): Pair<I
                     is ArrayAccess -> {
                         val (stateAfterArray, arrayValue) = evaluateExpr(lhs.array, stateAfterExpr)
                         val (stateAfterIndex, indexValue) = evaluateExpr(lhs.index, stateAfterArray)
-                        if (arrayValue is Value.ArrayValue && indexValue is Value.NumberValue) {
+                        if (arrayValue is ConcreteValue.ArrayValue && indexValue is ConcreteValue.NumberValue) {
                             val index = indexValue.value.toInt()
                             if (index >= 0 && index < arrayValue.elements.size) {
                                 // Functional update: create new list with updated element
                                 val updatedElements = arrayValue.elements.mapIndexed { i, elem -> 
                                     if (i == index) value else elem 
                                 }
-                                val updatedArray = Value.ArrayValue(updatedElements)
+                                val updatedArray = ConcreteValue.ArrayValue(updatedElements)
                                 when (val target = lhs.array) {
                                     is VarExpr -> stateAfterIndex.copy(
                                         env = stateAfterIndex.env + (target.name to updatedArray)
@@ -141,48 +156,48 @@ private fun Interpreter.executeStmt(stmt: Stmt, state: InterpreterState): Pair<I
                     }
                     else -> throw RuntimeException("Invalid left-hand side in assignment")
                 }
-                Pair(newState, ControlFlow.Normal())
+                Pair(newState, ControlFlow.Normal(ConcreteValue.NoneValue))
             }
             
             is Function -> {
                 // Create a function value with the current environment as closure
                 // For recursive functions, we'll add the function name to the environment
                 // and update the closure when we call it
-                val functionValue = Value.FunctionValue(stmt.params, stmt.body, state.env)
+                val functionValue = ConcreteValue.FunctionValue(stmt.params, stmt.body, state.env)
                 val updatedEnv = state.env + (stmt.name to functionValue)
-                Pair(state.copy(env = updatedEnv), ControlFlow.Normal())
+                Pair(state.copy(env = updatedEnv), ControlFlow.Normal(ConcreteValue.NoneValue))
             }
             
             is WhileStmt -> {
-                tailrec fun loop(currentState: InterpreterState): Pair<InterpreterState, ControlFlow> {
+                tailrec fun loop(currentState: InterpreterState<ConcreteValue>): Pair<InterpreterState<ConcreteValue>, ControlFlow<ConcreteValue>> {
                     val (stateAfterCondition, condition) = evaluateExpr(stmt.condition, currentState)
-                    return if (condition is Value.BoolValue && condition.value) {
+                    return if (condition is ConcreteValue.BoolValue && condition.value) {
                         val (newState, flow) = executeStmt(stmt.body, stateAfterCondition)
                         when (flow) {
-                            is ControlFlow.Break -> Pair(newState, ControlFlow.Normal())
+                            is ControlFlow.Break -> Pair(newState, ControlFlow.Normal(ConcreteValue.NoneValue))
                             is ControlFlow.Continue -> loop(newState)
                             is ControlFlow.Return -> Pair(newState, flow)
                             is ControlFlow.Normal -> loop(newState)
                         }
                     } else {
-                        Pair(stateAfterCondition, ControlFlow.Normal())
+                        Pair(stateAfterCondition, ControlFlow.Normal(ConcreteValue.NoneValue))
                     }
                 }
                 loop(state)
             }
             
             is PrintStmt -> {
-                val (newState, values) = stmt.args.fold(Pair(state, emptyList<Value>())) { (s, vals), arg ->
+                val (newState, values) = stmt.args.fold(Pair(state, emptyList<ConcreteValue>())) { (s, vals), arg ->
                     val (nextState, value) = evaluateExpr(arg, s)
                     Pair(nextState, vals + value)
                 }
                 println(values.joinToString(" ") { valueToString(it) })
-                Pair(newState, ControlFlow.Normal())
+                Pair(newState, ControlFlow.Normal(ConcreteValue.NoneValue))
             }
             
             is IfStmt -> {
                 val (stateAfterCondition, condition) = evaluateExpr(stmt.condition, state)
-                if (condition is Value.BoolValue && condition.value) {
+                if (condition is ConcreteValue.BoolValue && condition.value) {
                     executeStmt(stmt.thenBody, stateAfterCondition)
                 } else {
                     executeStmt(stmt.elseBody, stateAfterCondition)
@@ -200,7 +215,8 @@ private fun Interpreter.executeStmt(stmt: Stmt, state: InterpreterState): Pair<I
             }
             
             is BlockStmt -> {
-                stmt.stmts.fold(Pair(state, ControlFlow.Normal() as ControlFlow)) { (currentState, flow), s ->
+                val initialFlow: ControlFlow<ConcreteValue> = ControlFlow.Normal(ConcreteValue.NoneValue)
+                stmt.stmts.fold(Pair(state, initialFlow)) { (currentState, flow), s ->
                     when (flow) {
                         is ControlFlow.Normal -> executeStmt(s, currentState)
                         else -> Pair(currentState, flow) // Propagate non-normal control flow
@@ -211,9 +227,9 @@ private fun Interpreter.executeStmt(stmt: Stmt, state: InterpreterState): Pair<I
             is DerefStmt -> {
                 val (stateAfterLhs, refValue) = evaluateExpr(stmt.lhs, state)
                 val (stateAfterRhs, value) = evaluateExpr(stmt.rhs, stateAfterLhs)
-                if (refValue is Value.RefValue) {
+                if (refValue is ConcreteValue.RefValue) {
                     val updatedHeap = stateAfterRhs.heap + (refValue.ref to value)
-                    Pair(stateAfterRhs.copy(heap = updatedHeap), ControlFlow.Normal())
+                    Pair(stateAfterRhs.copy(heap = updatedHeap), ControlFlow.Normal(ConcreteValue.NoneValue))
                 } else {
                     throw RuntimeException("Expected reference in deref assignment")
                 }
@@ -221,27 +237,27 @@ private fun Interpreter.executeStmt(stmt: Stmt, state: InterpreterState): Pair<I
             
             is StructStmt -> {
                 val (newState, evaluatedFields) = stmt.fields.entries.fold(
-                    Pair(state, emptyMap<String, Value>())
+                    Pair(state, emptyMap<String, ConcreteValue>())
                 ) { (s, fields), (name, expr) ->
                     val (nextState, value) = evaluateExpr(expr, s)
                     Pair(nextState, fields + (name to value))
                 }
-                val recordValue = Value.RecordValue(evaluatedFields)
+                val recordValue = ConcreteValue.RecordValue(evaluatedFields)
                 val updatedEnv = newState.env + (stmt.id to recordValue)
-                Pair(newState.copy(env = updatedEnv), ControlFlow.Normal())
+                Pair(newState.copy(env = updatedEnv), ControlFlow.Normal(ConcreteValue.NoneValue))
             }
             
-            is Break -> Pair(state, ControlFlow.Break)
-            is Continue -> Pair(state, ControlFlow.Continue)
+            is Break -> Pair(state, ControlFlow.Break())
+            is Continue -> Pair(state, ControlFlow.Continue())
         }
     }
 
-// Extension function for evaluating expressions
-private fun Interpreter.evaluateExpr(expr: Expr, state: InterpreterState): Pair<InterpreterState, Value> {
+// Function for evaluating expressions with ConcreteValue
+private fun ConcreteInterpreter.evaluateExprImpl(expr: Expr, state: InterpreterState<ConcreteValue>): Pair<InterpreterState<ConcreteValue>, ConcreteValue> {
         return when (expr) {
-            is NumberLiteral -> Pair(state, Value.NumberValue(expr.value))
+            is NumberLiteral -> Pair(state, ConcreteValue.NumberValue(expr.value))
             
-            is BoolLiteral -> Pair(state, Value.BoolValue(expr.value))
+            is BoolLiteral -> Pair(state, ConcreteValue.BoolValue(expr.value))
             
             is StringLiteral -> {
                 val str = expr.value.trim('"')
@@ -249,7 +265,7 @@ private fun Interpreter.evaluateExpr(expr: Expr, state: InterpreterState): Pair<
                     .replace("\\t", "\t")
                     .replace("\\\"", "\"")
                     .replace("\\\\", "\\")
-                Pair(state, Value.StringValue(str))
+                Pair(state, ConcreteValue.StringValue(str))
             }
             
             is VarExpr -> {
@@ -260,8 +276,8 @@ private fun Interpreter.evaluateExpr(expr: Expr, state: InterpreterState): Pair<
             
             is ReadInputExpr -> {
                 val input = readlnOrNull()?.trim() ?: ""
-                val value = input.toDoubleOrNull()?.let { Value.NumberValue(it) } 
-                    ?: Value.StringValue(input)
+                val value = input.toDoubleOrNull()?.let { ConcreteValue.NumberValue(it) } 
+                    ?: ConcreteValue.StringValue(input)
                 Pair(state, value)
             }
             
@@ -273,7 +289,7 @@ private fun Interpreter.evaluateExpr(expr: Expr, state: InterpreterState): Pair<
             
             is IfExpr -> {
                 val (stateAfterCondition, condition) = evaluateExpr(expr.condition, state)
-                if (condition is Value.BoolValue && condition.value) {
+                if (condition is ConcreteValue.BoolValue && condition.value) {
                     evaluateExpr(expr.thenExpr, stateAfterCondition)
                 } else {
                     evaluateExpr(expr.elseExpr, stateAfterCondition)
@@ -282,16 +298,16 @@ private fun Interpreter.evaluateExpr(expr: Expr, state: InterpreterState): Pair<
             
             is ParenExpr -> evaluateExpr(expr.expr, state)
             
-            is NoneValue -> Pair(state, Value.NoneValue)
+            is NoneValue -> Pair(state, ConcreteValue.NoneValue)
             
             is Record -> {
                 val (newState, fields) = expr.expression.fold(
-                    Pair(state, emptyMap<String, Value>())
+                    Pair(state, emptyMap<String, ConcreteValue>())
                 ) { (s, fieldsMap), (name, e) ->
                     val (nextState, value) = evaluateExpr(e, s)
                     Pair(nextState, fieldsMap + (name to value))
                 }
-                Pair(newState, Value.RecordValue(fields))
+                Pair(newState, ConcreteValue.RecordValue(fields))
             }
             
             is RefExpr -> {
@@ -299,12 +315,12 @@ private fun Interpreter.evaluateExpr(expr: Expr, state: InterpreterState): Pair<
                 val ref = stateAfterExpr.nextRef
                 val updatedHeap = stateAfterExpr.heap + (ref to value)
                 val newState = stateAfterExpr.copy(heap = updatedHeap, nextRef = ref + 1)
-                Pair(newState, Value.RefValue(ref))
+                Pair(newState, ConcreteValue.RefValue(ref))
             }
             
             is DerefExpr -> {
                 val (newState, refValue) = evaluateExpr(expr.expr, state)
-                if (refValue is Value.RefValue) {
+                if (refValue is ConcreteValue.RefValue) {
                     val value = newState.heap[refValue.ref] 
                         ?: throw RuntimeException("Invalid reference")
                     Pair(newState, value)
@@ -315,7 +331,7 @@ private fun Interpreter.evaluateExpr(expr: Expr, state: InterpreterState): Pair<
             
             is FieldAccess -> {
                 val (newState, record) = evaluateExpr(expr.lhs, state)
-                if (record is Value.RecordValue && expr.rhs is VarExpr) {
+                if (record is ConcreteValue.RecordValue && expr.rhs is VarExpr) {
                     val value = record.fields[expr.rhs.name] 
                         ?: throw RuntimeException("Field ${expr.rhs.name} not found")
                     Pair(newState, value)
@@ -326,18 +342,18 @@ private fun Interpreter.evaluateExpr(expr: Expr, state: InterpreterState): Pair<
             
             is ArrayInit -> {
                 val (newState, elements) = expr.elements.fold(
-                    Pair(state, emptyList<Value>())
+                    Pair(state, emptyList<ConcreteValue>())
                 ) { (s, elems), e ->
                     val (nextState, value) = evaluateExpr(e, s)
                     Pair(nextState, elems + value)
                 }
-                Pair(newState, Value.ArrayValue(elements))
+                Pair(newState, ConcreteValue.ArrayValue(elements))
             }
             
             is ArrayAccess -> {
                 val (stateAfterArray, arrayValue) = evaluateExpr(expr.array, state)
                 val (stateAfterIndex, indexValue) = evaluateExpr(expr.index, stateAfterArray)
-                if (arrayValue is Value.ArrayValue && indexValue is Value.NumberValue) {
+                if (arrayValue is ConcreteValue.ArrayValue && indexValue is ConcreteValue.NumberValue) {
                     val index = indexValue.value.toInt()
                     if (index >= 0 && index < arrayValue.elements.size) {
                         Pair(stateAfterIndex, arrayValue.elements[index])
@@ -350,7 +366,7 @@ private fun Interpreter.evaluateExpr(expr: Expr, state: InterpreterState): Pair<
             }
             
             is InlinedFunction -> {
-                val functionValue = Value.FunctionValue(expr.params, expr.body, state.env)
+                val functionValue = ConcreteValue.FunctionValue(expr.params, expr.body, state.env)
                 Pair(state, functionValue)
             }
             
@@ -358,7 +374,7 @@ private fun Interpreter.evaluateExpr(expr: Expr, state: InterpreterState): Pair<
                 val function = state.env[expr.name] 
                     ?: throw RuntimeException("Function ${expr.name} not defined")
                 val (stateAfterArgs, args) = expr.arguments.fold(
-                    Pair(state, emptyList<Value>())
+                    Pair(state, emptyList<ConcreteValue>())
                 ) { (s, argsList), arg ->
                     val (nextState, value) = evaluateExpr(arg, s)
                     Pair(nextState, argsList + value)
@@ -369,7 +385,7 @@ private fun Interpreter.evaluateExpr(expr: Expr, state: InterpreterState): Pair<
             is ExpressionFunctionCall -> {
                 val (stateAfterTarget, function) = evaluateExpr(expr.target, state)
                 val (stateAfterArgs, args) = expr.arguments.fold(
-                    Pair(stateAfterTarget, emptyList<Value>())
+                    Pair(stateAfterTarget, emptyList<ConcreteValue>())
                 ) { (s, argsList), arg ->
                     val (nextState, value) = evaluateExpr(arg, s)
                     Pair(nextState, argsList + value)
@@ -389,8 +405,8 @@ private fun Interpreter.evaluateExpr(expr: Expr, state: InterpreterState): Pair<
     }
 
 // Helper function for calling functions
-private fun Interpreter.callFunction(function: Value, args: List<Value>, state: InterpreterState, functionName: String? = null): Pair<InterpreterState, Value> {
-        if (function !is Value.FunctionValue) {
+private fun ConcreteInterpreter.callFunction(function: ConcreteValue, args: List<ConcreteValue>, state: InterpreterState<ConcreteValue>, functionName: String? = null): Pair<InterpreterState<ConcreteValue>, ConcreteValue> {
+        if (function !is ConcreteValue.FunctionValue) {
             throw RuntimeException("Expected function value")
         }
         if (function.params.size != args.size) {
@@ -418,92 +434,92 @@ private fun Interpreter.callFunction(function: Value, args: List<Value>, state: 
     }
 
 // Helper function for evaluating binary operations (pure function, no state needed)
-private fun evaluateBinaryOp(left: Value, op: Operator, right: Value): Value {
+private fun evaluateBinaryOp(left: ConcreteValue, op: Operator, right: ConcreteValue): ConcreteValue {
         return when (op) {
             Operator.PLUS -> {
                 when {
-                    left is Value.NumberValue && right is Value.NumberValue ->
-                        Value.NumberValue(left.value + right.value)
-                    left is Value.StringValue && right is Value.StringValue ->
-                        Value.StringValue(left.value + right.value)
+                    left is ConcreteValue.NumberValue && right is ConcreteValue.NumberValue ->
+                        ConcreteValue.NumberValue(left.value + right.value)
+                    left is ConcreteValue.StringValue && right is ConcreteValue.StringValue ->
+                        ConcreteValue.StringValue(left.value + right.value)
                     else -> throw RuntimeException("Type error in addition")
                 }
             }
             Operator.MINUS -> {
-                if (left is Value.NumberValue && right is Value.NumberValue) {
-                    Value.NumberValue(left.value - right.value)
+                if (left is ConcreteValue.NumberValue && right is ConcreteValue.NumberValue) {
+                    ConcreteValue.NumberValue(left.value - right.value)
                 } else {
                     throw RuntimeException("Type error in subtraction")
                 }
             }
             Operator.TIMES -> {
-                if (left is Value.NumberValue && right is Value.NumberValue) {
-                    Value.NumberValue(left.value * right.value)
+                if (left is ConcreteValue.NumberValue && right is ConcreteValue.NumberValue) {
+                    ConcreteValue.NumberValue(left.value * right.value)
                 } else {
                     throw RuntimeException("Type error in multiplication")
                 }
             }
             Operator.DIV -> {
-                if (left is Value.NumberValue && right is Value.NumberValue) {
+                if (left is ConcreteValue.NumberValue && right is ConcreteValue.NumberValue) {
                     if (right.value == 0.0) {
                         throw RuntimeException("Division by zero")
                     }
-                    Value.NumberValue(left.value / right.value)
+                    ConcreteValue.NumberValue(left.value / right.value)
                 } else {
                     throw RuntimeException("Type error in division")
                 }
             }
             Operator.MOD -> {
-                if (left is Value.NumberValue && right is Value.NumberValue) {
-                    Value.NumberValue(left.value % right.value)
+                if (left is ConcreteValue.NumberValue && right is ConcreteValue.NumberValue) {
+                    ConcreteValue.NumberValue(left.value % right.value)
                 } else {
                     throw RuntimeException("Type error in modulo")
                 }
             }
             Operator.EQ -> {
-                Value.BoolValue(valuesEqual(left, right))
+                ConcreteValue.BoolValue(valuesEqual(left, right))
             }
             Operator.NEQ -> {
-                Value.BoolValue(!valuesEqual(left, right))
+                ConcreteValue.BoolValue(!valuesEqual(left, right))
             }
             Operator.LT -> {
-                if (left is Value.NumberValue && right is Value.NumberValue) {
-                    Value.BoolValue(left.value < right.value)
+                if (left is ConcreteValue.NumberValue && right is ConcreteValue.NumberValue) {
+                    ConcreteValue.BoolValue(left.value < right.value)
                 } else {
                     throw RuntimeException("Type error in comparison")
                 }
             }
             Operator.GT -> {
-                if (left is Value.NumberValue && right is Value.NumberValue) {
-                    Value.BoolValue(left.value > right.value)
+                if (left is ConcreteValue.NumberValue && right is ConcreteValue.NumberValue) {
+                    ConcreteValue.BoolValue(left.value > right.value)
                 } else {
                     throw RuntimeException("Type error in comparison")
                 }
             }
             Operator.LEQ -> {
-                if (left is Value.NumberValue && right is Value.NumberValue) {
-                    Value.BoolValue(left.value <= right.value)
+                if (left is ConcreteValue.NumberValue && right is ConcreteValue.NumberValue) {
+                    ConcreteValue.BoolValue(left.value <= right.value)
                 } else {
                     throw RuntimeException("Type error in comparison")
                 }
             }
             Operator.GEQ -> {
-                if (left is Value.NumberValue && right is Value.NumberValue) {
-                    Value.BoolValue(left.value >= right.value)
+                if (left is ConcreteValue.NumberValue && right is ConcreteValue.NumberValue) {
+                    ConcreteValue.BoolValue(left.value >= right.value)
                 } else {
                     throw RuntimeException("Type error in comparison")
                 }
             }
             Operator.AND -> {
-                if (left is Value.BoolValue && right is Value.BoolValue) {
-                    Value.BoolValue(left.value && right.value)
+                if (left is ConcreteValue.BoolValue && right is ConcreteValue.BoolValue) {
+                    ConcreteValue.BoolValue(left.value && right.value)
                 } else {
                     throw RuntimeException("Type error in AND operation")
                 }
             }
             Operator.OR -> {
-                if (left is Value.BoolValue && right is Value.BoolValue) {
-                    Value.BoolValue(left.value || right.value)
+                if (left is ConcreteValue.BoolValue && right is ConcreteValue.BoolValue) {
+                    ConcreteValue.BoolValue(left.value || right.value)
                 } else {
                     throw RuntimeException("Type error in OR operation")
                 }
@@ -512,20 +528,20 @@ private fun evaluateBinaryOp(left: Value, op: Operator, right: Value): Value {
     }
 
 // Helper function for comparing values (pure function)
-private fun valuesEqual(left: Value, right: Value): Boolean {
+private fun valuesEqual(left: ConcreteValue, right: ConcreteValue): Boolean {
         return when {
-            left is Value.NumberValue && right is Value.NumberValue -> left.value == right.value
-            left is Value.BoolValue && right is Value.BoolValue -> left.value == right.value
-            left is Value.StringValue && right is Value.StringValue -> left.value == right.value
-            left is Value.NoneValue && right is Value.NoneValue -> true
+            left is ConcreteValue.NumberValue && right is ConcreteValue.NumberValue -> left.value == right.value
+            left is ConcreteValue.BoolValue && right is ConcreteValue.BoolValue -> left.value == right.value
+            left is ConcreteValue.StringValue && right is ConcreteValue.StringValue -> left.value == right.value
+            left is ConcreteValue.NoneValue && right is ConcreteValue.NoneValue -> true
             else -> false
         }
     }
 
 // Helper function for converting values to strings (pure function)
-private fun valueToString(value: Value): String {
+private fun valueToString(value: ConcreteValue): String {
         return when (value) {
-            is Value.NumberValue -> {
+            is ConcreteValue.NumberValue -> {
                 // Format numbers nicely (remove .0 for integers)
                 if (value.value == value.value.toLong().toDouble()) {
                     value.value.toLong().toString()
@@ -533,12 +549,12 @@ private fun valueToString(value: Value): String {
                     value.value.toString()
                 }
             }
-            is Value.BoolValue -> value.value.toString()
-            is Value.StringValue -> value.value
-            is Value.FunctionValue -> "<function>"
-            is Value.RecordValue -> "{${value.fields.entries.joinToString(", ") { "${it.key}: ${valueToString(it.value)}" }}}"
-            is Value.ArrayValue -> "[${value.elements.joinToString(", ") { valueToString(it) }}]"
-            is Value.RefValue -> "<ref:${value.ref}>"
-            is Value.NoneValue -> "None"
+            is ConcreteValue.BoolValue -> value.value.toString()
+            is ConcreteValue.StringValue -> value.value
+            is ConcreteValue.FunctionValue -> "<function>"
+            is ConcreteValue.RecordValue -> "{${value.fields.entries.joinToString(", ") { "${it.key}: ${valueToString(it.value)}" }}}"
+            is ConcreteValue.ArrayValue -> "[${value.elements.joinToString(", ") { valueToString(it) }}]"
+            is ConcreteValue.RefValue -> "<ref:${value.ref}>"
+            is ConcreteValue.NoneValue -> "None"
         }
     }
