@@ -22,7 +22,7 @@ private const val AST_OPT = "ast"
 
 private const val IR_OPT = "ir"
 
-class SlangcCLI : CliktCommand("slangc") {
+class SlangCLI : CliktCommand("slangc") {
 
     private val logger = LoggerFactory.getLogger("slangc")
 
@@ -105,4 +105,4 @@ class SlangcCLI : CliktCommand("slangc") {
     }
 }
 
-fun main(args: Array<String>) = SlangcCLI().main(args)
+fun main(args: Array<String>) = SlangCLI().main(args)
