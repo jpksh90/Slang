@@ -75,12 +75,68 @@ To build the code for the Slang project, follow these steps:
 
 ## Run the Application
 
-To run the Slang application using the provided `slangc` script, follow these command:
+To run the Slang application using the provided `slangc` script, follow these commands:
 
 ```bash
 ./slangc <input-file>
 ## For example:  
-./slangc src/test/resources/mandelbrot.slang
+./slangc src/test/resources/facl.slang
 ```
 
-The script will compile the code and run it. 
+By default, the script will interpret and execute the Slang program.
+
+### Output Modes
+
+You can specify different output modes using the `-o` flag:
+
+- **Run mode** (default): Execute the program
+  ```bash
+  ./slangc src/test/resources/sum_prod.slang
+  # or explicitly:
+  ./slangc -o run src/test/resources/sum_prod.slang
+  ```
+
+- **AST mode**: Output the Abstract Syntax Tree
+  ```bash
+  ./slangc -o ast src/test/resources/sum_prod.slang
+  ```
+
+- **IR mode**: Output the Intermediate Representation
+  ```bash
+  ./slangc -o ir src/test/resources/sum_prod.slang
+  ```
+
+### Interactive REPL
+
+You can also start an interactive REPL (Read-Eval-Print Loop):
+
+```bash
+./gradlew run --console=plain --quiet
+```
+
+In the REPL, you can enter Slang statements and see the results immediately:
+
+```
+Welcome to the Slang REPL!
+> let x = 5;
+> let y = 10;
+> print(x + y);
+15
+> exit
+```
+
+### Examples
+
+Run the factorial example:
+```bash
+echo "5" | ./slangc src/test/resources/facl.slang
+# Output: 120
+```
+
+Run the sum and product example:
+```bash
+./slangc src/test/resources/sum_prod.slang
+# Output:
+# 15
+# 50
+``` 

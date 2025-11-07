@@ -11,11 +11,12 @@ import org.yaml.snakeyaml.DumperOptions
 import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.nodes.Tag
 import slang.parser.FileParserInterface
+import slang.repl.Interpreter
 import slang.slast.*
 import java.nio.file.Files
 import java.nio.file.Paths
 
-private const val BYTECODE_OPT = "bytecode"
+private const val RUN_OPT = "run"
 
 private const val AST_OPT = "ast"
 
@@ -26,8 +27,8 @@ class SlangcCLI : CliktCommand("slangc") {
     private val logger = LoggerFactory.getLogger("slangc")
 
     private val inputFile by argument(help = "Input file")
-    private val stage by option("-o", "--output-format", help = "Run till stage").choice(AST_OPT, BYTECODE_OPT, IR_OPT)
-        .default(BYTECODE_OPT)
+    private val stage by option("-o", "--output-format", help = "Run till stage").choice(AST_OPT, RUN_OPT, IR_OPT)
+        .default(RUN_OPT)
     private val verbose by option("-v", "--verbose", help = "Enable verbose output").flag()
 
     init {
@@ -80,15 +81,25 @@ class SlangcCLI : CliktCommand("slangc") {
 
         if (stage == AST_OPT) {
             println(dumpAst(parser.compilationUnit))
+            return
         }
 
         val irTree = SlastBuilder(parser.compilationUnit).compilationUnit
         if (stage == IR_OPT) {
            println(irTree.prettyPrint())
+           return
         }
 
-        if (stage == BYTECODE_OPT) {
-            TODO("Bytecode generation has not been implemented")
+        if (stage == RUN_OPT) {
+            val interpreter = Interpreter()
+            try {
+                interpreter.interpret(irTree)
+            } catch (e: Exception) {
+                logger.error("Runtime error: ${e.message}")
+                if (verbose) {
+                    e.printStackTrace()
+                }
+            }
         }
 
     }
