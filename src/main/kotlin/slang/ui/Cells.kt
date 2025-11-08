@@ -1,4 +1,4 @@
-package slang.visualizer
+package slang.ui
 
 import java.awt.Color
 import java.awt.Component

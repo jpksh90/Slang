@@ -1,4 +1,4 @@
-package slang.visualizer
+package slang.ui
 
 import com.formdev.flatlaf.FlatDarculaLaf
 import org.fife.ui.rsyntaxtextarea.AbstractTokenMakerFactory
