@@ -45,19 +45,8 @@ abstract class Parser(input: CharStream) {
     }
 
     private fun initializeCompilationRules() {
-        val reflections = Reflections("slang.parser")
-        for (rule in reflections.getSubTypesOf(CompilationRule::class.java)) {
-            val annotation = rule.getAnnotation(ParserRule::class.java) ?: continue
-
-            if (!annotation.enabled) {
-                logger.warn("Rule ${rule.simpleName} is not enabled.")
-                continue
-            }
-
-            val constructor = rule.getConstructor(SlangParserErrorListener::class.java)
-            val ruleInstance = constructor.newInstance(errorListener)
-            ruleManager.addRule(ruleInstance)
-        }
+        // Auto-discover and register compilation rules in the package `slang.parser`.
+        ruleManager.addCompilationRulesAutomatically("slang.parser", errorListener)
     }
 
     // This method is used to parse the compilation unit and apply the rules. Basic syntax has been handled by Antlr
