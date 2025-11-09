@@ -5,6 +5,10 @@ plugins {
     id("org.jlleitschuh.gradle.ktlint") version "12.1.0"
 }
 
+kotlin {
+    jvmToolchain(21)
+}
+
 group = "org.example"
 version = "1.0-SNAPSHOT"
 
@@ -35,16 +39,18 @@ tasks.generateGrammarSource {
     arguments = arguments + listOf("-visitor", "-listener", "-long-messages")
 }
 
+sourceSets {
+    main {
+        java.srcDir("build/generated-src/antlr/main")
+    }
+}
+
 tasks.named("compileKotlin") {
     dependsOn("generateGrammarSource")
 }
 
 tasks.named("compileTestKotlin") {
     dependsOn("generateTestGrammarSource")
-}
-
-kotlin {
-    jvmToolchain(21)
 }
 
 tasks.register("showGui", JavaExec::class) {
@@ -86,12 +92,28 @@ ktlint {
         reporter(org.jlleitschuh.gradle.ktlint.reporter.ReporterType.PLAIN)
         reporter(org.jlleitschuh.gradle.ktlint.reporter.ReporterType.CHECKSTYLE)
     }
+    filter {
+        exclude("**/build/generated-src/**")
+        exclude("**/generated/**")
+    }
 }
 
-tasks.named("runKtlintCheckOverMainSourceSet") {
-    mustRunAfter(tasks.named("compileKotlin"))
+tasks.runKtlintCheckOverMainSourceSet {
+    enabled = true
+    dependsOn(tasks.generateGrammarSource)
 }
 
-tasks.named("runKtlintFormatOverMainSourceSet") {
-    mustRunAfter(tasks.named("compileKotlin"))
+tasks.runKtlintFormatOverMainSourceSet {
+    enabled = true
+    dependsOn(tasks.generateGrammarSource)
+}
+
+tasks.runKtlintCheckOverTestSourceSet {
+    enabled = true
+    dependsOn(tasks.generateTestGrammarSource)
+}
+
+tasks.runKtlintFormatOverTestSourceSet {
+    enabled = true
+    dependsOn(tasks.generateTestGrammarSource)
 }
