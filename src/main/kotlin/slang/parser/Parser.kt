@@ -7,8 +7,8 @@ import org.antlr.v4.runtime.CharStream
 import org.antlr.v4.runtime.CommonTokenStream
 import org.antlr.v4.runtime.ParserRuleContext
 import slang.common.CodeInfo
-import util.Result
-import util.Transform
+import slang.common.Result
+import slang.common.Transform
 import java.io.File
 
 fun ParserRuleContext.lineColumn() = CodeInfo(this.start.line,  this.stop.line, this.start.charPositionInLine,

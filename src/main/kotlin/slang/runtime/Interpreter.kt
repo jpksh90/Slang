@@ -338,11 +338,8 @@ class Interpreter {
 
         val (finalState, flow) = executeStmt(function.body, callState)
         val returnValue = when (flow) {
-            is ControlFlow.Return -> flow.value
-            is ControlFlow.Normal -> when (flow) {
-                else -> flow.value
-            }
-
+            is ControlFlow.Return-> flow.value
+            is ControlFlow.Normal ->  flow.value
             is ControlFlow.Break -> throw RuntimeException("Break statement outside loop")
             is ControlFlow.Continue -> throw RuntimeException("Continue statement outside loop")
         }

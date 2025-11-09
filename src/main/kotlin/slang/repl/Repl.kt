@@ -4,8 +4,8 @@ import slang.hlir.ParseTree2HlirTrasnformer
 import slang.parser.String2ParseTreeTransformer
 import slang.runtime.Interpreter
 import slang.runtime.InterpreterState
-import util.invoke
-import util.then
+import slang.common.invoke
+import slang.common.then
 
 const val PROMPT = "> "
 

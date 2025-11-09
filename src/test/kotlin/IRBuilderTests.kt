@@ -1,8 +1,8 @@
 import org.approvaltests.Approvals
 import slang.hlir.ParseTree2HlirTrasnformer
 import slang.parser.File2ParseTreeTransformer
-import util.invoke
-import util.then
+import slang.common.invoke
+import slang.common.then
 import java.io.File
 import java.net.URL
 import kotlin.test.Test

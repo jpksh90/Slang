@@ -9,10 +9,10 @@ import org.antlr.v4.runtime.ParserRuleContext
 import slang.common.CodeInfo
 import slang.common.CodeInfo.Companion.generic
 import slang.parser.*
-import util.Result
-import util.Transform
-import util.invoke
-import util.then
+import slang.common.Result
+import slang.common.Transform
+import slang.common.invoke
+import slang.common.then
 import java.io.File
 
 

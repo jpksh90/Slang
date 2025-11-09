@@ -7,9 +7,6 @@ import org.fife.ui.rsyntaxtextarea.Theme
 import org.fife.ui.rsyntaxtextarea.TokenMakerFactory
 import org.fife.ui.rtextarea.RTextScrollPane
 import slang.hlir.*
-import slang.parser.String2ParseTreeTransformer
-import util.invoke
-import util.then
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.GridLayout
