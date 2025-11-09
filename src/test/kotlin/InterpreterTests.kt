@@ -1,8 +1,7 @@
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
-import slang.parser.StringParserInterface
 import slang.repl.ConcreteInterpreter
-import slang.slast.SlastBuilder
+import slang.hlir.string2hlir
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
@@ -31,12 +30,12 @@ class InterpreterTests {
             System.setIn(ByteArrayInputStream(input.toByteArray()))
         }
         outputStream.reset()
-        
-        val parser = StringParserInterface(code)
-        val ast = SlastBuilder(parser.compilationUnit).compilationUnit
+        val ast = string2hlir(code)
         val interpreter = ConcreteInterpreter()
-        interpreter.interpret(ast)
-        
+        ast.fold(
+            { interpreter.interpret(it)},
+            { outputStream.write(it.toString().toByteArray()) }
+        )
         return outputStream.toString().trim()
     }
 

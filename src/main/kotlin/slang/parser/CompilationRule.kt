@@ -5,6 +5,7 @@ import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.tree.ParseTreeWalker
 import org.reflections.Reflections
 import org.slf4j.LoggerFactory
+import slang.common.CodeInfo
 
 /**
  * Annotation to define a parser rule.
@@ -41,7 +42,7 @@ abstract class CompilationRule(private val errorListener: SlangParserErrorListen
      *
      * @param error The error to log.
      */
-    private fun logCompilationError(error: Error) {
+    private fun logCompilationError(error: CompilerError) {
         result = false
         errorListener.addError(error)
     }
@@ -49,11 +50,11 @@ abstract class CompilationRule(private val errorListener: SlangParserErrorListen
     /**
      * Logs a compilation error with specific details.
      *
-     * @param lineColumn The line/column where the error occurred.
+     * @param codeInfo The line/column where the error occurred.
      * @param message The error message.
      */
-    fun logCompilationError(lineColumn: LineColumn, message: String) {
-        logCompilationError(Error(lineColumn, message))
+    fun logCompilationError(codeInfo: CodeInfo, message: String) {
+        logCompilationError(CompilerError(codeInfo, message))
     }
 }
 
@@ -86,7 +87,7 @@ class CompilationRuleManager {
      * @param packageName package to scan (e.g. "slang.parser")
      * @param errorListener listener instance to pass to rule constructors
      */
-    fun addCompilationRulesAutomatically(packageName: String, errorListener: SlangParserErrorListener) {
+    fun discoverCompilationRules(packageName: String, errorListener: SlangParserErrorListener) {
         try {
             val reflections = Reflections(packageName)
 
@@ -151,13 +152,10 @@ class CompilationRuleManager {
      * @param ctx The parser context to apply the rules to.
      * @return True if all rules pass, false otherwise.
      */
-    fun applyRules(ctx: ParserRuleContext): Boolean {
-        return rules.fold(true) { acc, rule ->
-            val annotation = rule::class.java.getAnnotation(ParserRule::class.java)
-            if (annotation != null) {
-                logger.debug("Applying rule: ${annotation.name}")
-            }
-            acc && rule.apply(ctx)
+    fun applyRules(ctx: ParserRuleContext): Boolean =
+         rules.fold(true) { acc, rule ->
+            rule::class.java.getAnnotation(ParserRule::class.java)
+                ?.takeIf { it.enabled }
+                ?.let { acc && rule.apply(ctx) } ?: acc
         }
-    }
 }

@@ -1,12 +1,12 @@
 package slang.repl
 
+import slang.hlir.ProgramUnit
 import slang.runtime.Interpreter
-import slang.slast.CompilationUnit
 
 class ConcreteInterpreter {
     private val interpreter = Interpreter()
 
-    fun interpret(unit: CompilationUnit) {
+    fun interpret(unit: ProgramUnit) {
         interpreter.interpret(unit)
     }
 }

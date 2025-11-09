@@ -1,10 +1,11 @@
 package slang.repl
 
-import slang.parser.StringParserInterface
-import slang.slast.SlastBuilder
-import slang.slast.CompilationUnit
+import slang.hlir.ParseTree2HlirTrasnformer
+import slang.parser.String2ParseTreeTransformer
 import slang.runtime.Interpreter
 import slang.runtime.InterpreterState
+import util.invoke
+import util.then
 
 const val PROMPT = "> "
 
@@ -21,9 +22,11 @@ class Repl {
             if (input == "exit") break
 
             try {
-                val parser = StringParserInterface(input)
-                val ast = SlastBuilder(parser.compilationUnit).compilationUnit
-                state = interpreter.interpret(ast, state)
+                val compilerPipeline = String2ParseTreeTransformer() then ParseTree2HlirTrasnformer()
+                val ast = compilerPipeline.invoke(input).getOrNull()
+                if (ast != null) {
+                    state = interpreter.interpret(ast, state)
+                }
             } catch (e: Exception) {
                 println("Error: ${e.message}")
                 if (e !is RuntimeException) e.printStackTrace()

@@ -1,9 +1,11 @@
 package slang.runtime
 
-import slang.slast.*
+import slang.hlir.Expr
+import slang.hlir.ProgramUnit
+import slang.hlir.Stmt
 
 class Interpreter {
-    fun interpret(program: CompilationUnit, state: InterpreterState = InterpreterState()): InterpreterState {
+    fun interpret(program: ProgramUnit, state: InterpreterState = InterpreterState()): InterpreterState {
         return program.stmt.fold(state) { currentState, stmt ->
             val (newState, _) = executeStmt(stmt, currentState)
             newState
@@ -12,23 +14,24 @@ class Interpreter {
 
     private fun executeStmt(stmt: Stmt, state: InterpreterState): Pair<InterpreterState, ControlFlow> {
         when (stmt) {
-            is LetStmt -> {
+            is Stmt.LetStmt -> {
                 val (newState, value) = evaluateExpr(stmt.expr, state)
                 val updatedEnv = newState.env + (stmt.name to value)
                 return Pair(newState.copy(env = updatedEnv), ControlFlow.Normal(value))
             }
 
-            is AssignStmt -> {
+            is Stmt.AssignStmt -> {
                 val (stateAfterExpr, value) = evaluateExpr(stmt.expr, state)
                 val newState = when (val lhs = stmt.lhs) {
-                    is VarExpr -> {
+                    is Expr.VarExpr -> {
                         if (stateAfterExpr.env.containsKey(lhs.name)) {
                             stateAfterExpr.copy(env = stateAfterExpr.env + (lhs.name to value))
                         } else {
                             throw RuntimeException("Variable ${lhs.name} not defined")
                         }
                     }
-                    is DerefExpr -> {
+
+                    is Expr.DerefExpr -> {
                         val (stateAfterDeref, refValue) = evaluateExpr(lhs.expr, stateAfterExpr)
                         if (refValue is Value.RefValue) {
                             stateAfterDeref.copy(heap = stateAfterDeref.heap + (refValue.ref to value))
@@ -36,29 +39,32 @@ class Interpreter {
                             throw RuntimeException("Expected reference in deref assignment")
                         }
                     }
-                    is FieldAccess -> {
+
+                    is Expr.FieldAccess -> {
                         val (stateAfterRecord, record) = evaluateExpr(lhs.lhs, stateAfterExpr)
-                        if (record is Value.RecordValue && lhs.rhs is VarExpr) {
+                        if (record is Value.RecordValue && lhs.rhs is Expr.VarExpr) {
                             val updatedFields = record.fields + (lhs.rhs.name to value)
                             val updatedRecord = Value.RecordValue(updatedFields)
                             when (val target = lhs.lhs) {
-                                is VarExpr -> stateAfterRecord.copy(env = stateAfterRecord.env + (target.name to updatedRecord))
+                                is Expr.VarExpr -> stateAfterRecord.copy(env = stateAfterRecord.env + (target.name to updatedRecord))
                                 else -> throw RuntimeException("Cannot assign to field of non-variable")
                             }
                         } else {
                             throw RuntimeException("Invalid field access in assignment")
                         }
                     }
-                    is ArrayAccess -> {
+
+                    is Expr.ArrayAccess -> {
                         val (stateAfterArray, arrayValue) = evaluateExpr(lhs.array, stateAfterExpr)
                         val (stateAfterIndex, indexValue) = evaluateExpr(lhs.index, stateAfterArray)
                         if (arrayValue is Value.ArrayValue && indexValue is Value.NumberValue) {
                             val index = indexValue.value.toInt()
                             if (index >= 0 && index < arrayValue.elements.size) {
-                                val updatedElements = arrayValue.elements.mapIndexed { i, elem -> if (i == index) value else elem }
+                                val updatedElements =
+                                    arrayValue.elements.mapIndexed { i, elem -> if (i == index) value else elem }
                                 val updatedArray = Value.ArrayValue(updatedElements)
                                 when (val target = lhs.array) {
-                                    is VarExpr -> stateAfterIndex.copy(env = stateAfterIndex.env + (target.name to updatedArray))
+                                    is Expr.VarExpr -> stateAfterIndex.copy(env = stateAfterIndex.env + (target.name to updatedArray))
                                     else -> throw RuntimeException("Cannot update array element")
                                 }
                             } else {
@@ -68,19 +74,20 @@ class Interpreter {
                             throw RuntimeException("Invalid array access in assignment")
                         }
                     }
+
                     else -> throw RuntimeException("Invalid left-hand side in assignment")
                 }
                 return Pair(newState, ControlFlow.Normal())
             }
 
-            is slang.slast.Function -> {
-                val f = stmt as slang.slast.Function
+            is Stmt.Function -> {
+                val f = stmt
                 val functionValue = Value.FunctionValue(f.params, f.body, state.env)
                 val updatedEnv = state.env + (f.name to functionValue)
                 return Pair(state.copy(env = updatedEnv), ControlFlow.Normal())
             }
 
-            is WhileStmt -> {
+            is Stmt.WhileStmt -> {
                 var loopState = state
                 while (true) {
                     val (stateAfterCondition, condition) = evaluateExpr(stmt.condition, loopState)
@@ -92,6 +99,7 @@ class Interpreter {
                                 loopState = newState
                                 continue
                             }
+
                             is ControlFlow.Return -> return Pair(newState, flow)
                             is ControlFlow.Normal -> {
                                 loopState = newState
@@ -104,7 +112,7 @@ class Interpreter {
                 }
             }
 
-            is PrintStmt -> {
+            is Stmt.PrintStmt -> {
                 val (newState, values) = stmt.args.fold(Pair(state, emptyList<Value>())) { (s, vals), arg ->
                     val (nextState, value) = evaluateExpr(arg, s)
                     Pair(nextState, vals + value)
@@ -113,7 +121,7 @@ class Interpreter {
                 return Pair(newState, ControlFlow.Normal())
             }
 
-            is IfStmt -> {
+            is Stmt.IfStmt -> {
                 val (stateAfterCondition, condition) = evaluateExpr(stmt.condition, state)
                 return if (condition is Value.BoolValue && condition.value) {
                     executeStmt(stmt.thenBody, stateAfterCondition)
@@ -122,17 +130,17 @@ class Interpreter {
                 }
             }
 
-            is ExprStmt -> {
+            is Stmt.ExprStmt -> {
                 val (newState, value) = evaluateExpr(stmt.expr, state)
                 return Pair(newState, ControlFlow.Normal(value))
             }
 
-            is ReturnStmt -> {
+            is Stmt.ReturnStmt -> {
                 val (newState, value) = evaluateExpr(stmt.expr, state)
                 return Pair(newState, ControlFlow.Return(value))
             }
 
-            is BlockStmt -> {
+            is Stmt.BlockStmt -> {
                 var currentState = state
                 var flow: ControlFlow = ControlFlow.Normal()
                 for (s in stmt.stmts) {
@@ -145,7 +153,7 @@ class Interpreter {
                 return Pair(currentState, flow)
             }
 
-            is DerefStmt -> {
+            is Stmt.DerefStmt -> {
                 val (stateAfterLhs, refValue) = evaluateExpr(stmt.lhs, state)
                 val (stateAfterRhs, value) = evaluateExpr(stmt.rhs, stateAfterLhs)
                 if (refValue is Value.RefValue) {
@@ -156,8 +164,13 @@ class Interpreter {
                 }
             }
 
-            is StructStmt -> {
-                val (newState, evaluatedFields) = stmt.fields.entries.fold(Pair(state, emptyMap<String, Value>())) { (s, fields), (name, expr) ->
+            is Stmt.StructStmt -> {
+                val (newState, evaluatedFields) = stmt.fields.entries.fold(
+                    Pair(
+                        state,
+                        emptyMap<String, Value>()
+                    )
+                ) { (s, fields), (name, expr) ->
                     val (nextState, value) = evaluateExpr(expr, s)
                     Pair(nextState, fields + (name to value))
                 }
@@ -166,39 +179,39 @@ class Interpreter {
                 return Pair(newState.copy(env = updatedEnv), ControlFlow.Normal())
             }
 
-            is Break -> return Pair(state, ControlFlow.Break)
-            is Continue -> return Pair(state, ControlFlow.Continue)
+            is Stmt.Break -> return Pair(state, ControlFlow.Break)
+            is Stmt.Continue -> return Pair(state, ControlFlow.Continue)
         }
-        throw RuntimeException("Unhandled statement type: ${stmt::class.simpleName}")
     }
 
     private fun evaluateExpr(expr: Expr, state: InterpreterState): Pair<InterpreterState, Value> {
         when (expr) {
-            is NumberLiteral -> return Pair(state, Value.NumberValue(expr.value))
-            is BoolLiteral -> return Pair(state, Value.BoolValue(expr.value))
-            is StringLiteral -> {
-                val str = expr.value.trim('"')
-                    .replace("\\n", "\n")
-                    .replace("\\t", "\t")
-                    .replace("\\\"", "\"")
+            is Expr.NumberLiteral -> return Pair(state, Value.NumberValue(expr.value))
+            is Expr.BoolLiteral -> return Pair(state, Value.BoolValue(expr.value))
+            is Expr.StringLiteral -> {
+                val str = expr.value.trim('"').replace("\\n", "\n").replace("\\t", "\t").replace("\\\"", "\"")
                     .replace("\\\\", "\\")
                 return Pair(state, Value.StringValue(str))
             }
-            is VarExpr -> {
+
+            is Expr.VarExpr -> {
                 val value = state.env[expr.name] ?: throw RuntimeException("Variable ${expr.name} not defined")
                 return Pair(state, value)
             }
-            is ReadInputExpr -> {
+
+            is Expr.ReadInputExpr -> {
                 val input = readlnOrNull()?.trim() ?: ""
                 val value = input.toDoubleOrNull()?.let { Value.NumberValue(it) } ?: Value.StringValue(input)
                 return Pair(state, value)
             }
-            is BinaryExpr -> {
+
+            is Expr.BinaryExpr -> {
                 val (stateAfterLeft, left) = evaluateExpr(expr.left, state)
                 val (stateAfterRight, right) = evaluateExpr(expr.right, stateAfterLeft)
                 return Pair(stateAfterRight, evaluateBinaryOp(left, expr.op, right))
             }
-            is IfExpr -> {
+
+            is Expr.IfExpr -> {
                 val (stateAfterCondition, condition) = evaluateExpr(expr.condition, state)
                 return if (condition is Value.BoolValue && condition.value) {
                     evaluateExpr(expr.thenExpr, stateAfterCondition)
@@ -206,23 +219,31 @@ class Interpreter {
                     evaluateExpr(expr.elseExpr, stateAfterCondition)
                 }
             }
-            is ParenExpr -> return evaluateExpr(expr.expr, state)
-            is NoneValue -> return Pair(state, Value.NoneValue)
-            is Record -> {
-                val (newState, fields) = expr.expression.fold(Pair(state, emptyMap<String, Value>())) { (s, fieldsMap), (name, e) ->
+
+            is Expr.ParenExpr -> return evaluateExpr(expr.expr, state)
+            is Expr.NoneValue -> return Pair(state, Value.NoneValue)
+            is Expr.Record -> {
+                val (newState, fields) = expr.expression.fold(
+                    Pair(
+                        state,
+                        emptyMap<String, Value>()
+                    )
+                ) { (s, fieldsMap), (name, e) ->
                     val (nextState, value) = evaluateExpr(e, s)
                     Pair(nextState, fieldsMap + (name to value))
                 }
                 return Pair(newState, Value.RecordValue(fields))
             }
-            is RefExpr -> {
+
+            is Expr.RefExpr -> {
                 val (stateAfterExpr, value) = evaluateExpr(expr.expr, state)
                 val ref = stateAfterExpr.nextRef
                 val updatedHeap = stateAfterExpr.heap + (ref to value)
                 val newState = stateAfterExpr.copy(heap = updatedHeap, nextRef = ref + 1)
                 return Pair(newState, Value.RefValue(ref))
             }
-            is DerefExpr -> {
+
+            is Expr.DerefExpr -> {
                 val (newState, refValue) = evaluateExpr(expr.expr, state)
                 if (refValue is Value.RefValue) {
                     val value = newState.heap[refValue.ref] ?: throw RuntimeException("Invalid reference")
@@ -231,23 +252,27 @@ class Interpreter {
                     throw RuntimeException("Expected reference in deref")
                 }
             }
-            is FieldAccess -> {
+
+            is Expr.FieldAccess -> {
                 val (newState, record) = evaluateExpr(expr.lhs, state)
-                if (record is Value.RecordValue && expr.rhs is VarExpr) {
-                    val value = record.fields[expr.rhs.name] ?: throw RuntimeException("Field ${expr.rhs.name} not found")
+                if (record is Value.RecordValue && expr.rhs is Expr.VarExpr) {
+                    val value =
+                        record.fields[expr.rhs.name] ?: throw RuntimeException("Field ${expr.rhs.name} not found")
                     return Pair(newState, value)
                 } else {
                     throw RuntimeException("Invalid field access")
                 }
             }
-            is ArrayInit -> {
+
+            is Expr.ArrayInit -> {
                 val (newState, elements) = expr.elements.fold(Pair(state, emptyList<Value>())) { (s, elems), e ->
                     val (nextState, value) = evaluateExpr(e, s)
                     Pair(nextState, elems + value)
                 }
                 return Pair(newState, Value.ArrayValue(elements))
             }
-            is ArrayAccess -> {
+
+            is Expr.ArrayAccess -> {
                 val (stateAfterArray, arrayValue) = evaluateExpr(expr.array, state)
                 val (stateAfterIndex, indexValue) = evaluateExpr(expr.index, stateAfterArray)
                 if (arrayValue is Value.ArrayValue && indexValue is Value.NumberValue) {
@@ -261,32 +286,48 @@ class Interpreter {
                     throw RuntimeException("Invalid array access")
                 }
             }
-            is InlinedFunction -> {
+
+            is Expr.InlinedFunction -> {
                 val functionValue = Value.FunctionValue(expr.params, expr.body, state.env)
                 return Pair(state, functionValue)
             }
-            is NamedFunctionCall -> {
+
+            is Expr.NamedFunctionCall -> {
                 val function = state.env[expr.name] ?: throw RuntimeException("Function ${expr.name} not defined")
-                val (stateAfterArgs, args) = expr.arguments.fold(Pair(state, emptyList<Value>())) { (s, argsList), arg ->
+                val (stateAfterArgs, args) = expr.arguments.fold(
+                    Pair(
+                        state,
+                        emptyList<Value>()
+                    )
+                ) { (s, argsList), arg ->
                     val (nextState, value) = evaluateExpr(arg, s)
                     Pair(nextState, argsList + value)
                 }
                 return callFunction(function, args, stateAfterArgs, expr.name)
             }
-            is ExpressionFunctionCall -> {
+
+            is Expr.ExpressionFunctionCall -> {
                 val (stateAfterTarget, function) = evaluateExpr(expr.target, state)
-                val (stateAfterArgs, args) = expr.arguments.fold(Pair(stateAfterTarget, emptyList<Value>())) { (s, argsList), arg ->
+                val (stateAfterArgs, args) = expr.arguments.fold(
+                    Pair(
+                        stateAfterTarget,
+                        emptyList<Value>()
+                    )
+                ) { (s, argsList), arg ->
                     val (nextState, value) = evaluateExpr(arg, s)
                     Pair(nextState, argsList + value)
                 }
                 return callFunction(function, args, stateAfterArgs, null)
             }
         }
-        val location = if (expr.sourceCodeInfo.lineStart >= 0) " at line ${expr.sourceCodeInfo.lineStart}" else ""
-        throw RuntimeException("Unsupported expression type: ${expr::class.simpleName}$location")
     }
 
-    private fun callFunction(function: Value, args: List<Value>, state: InterpreterState, functionName: String? = null): Pair<InterpreterState, Value> {
+    private fun callFunction(
+        function: Value,
+        args: List<Value>,
+        state: InterpreterState,
+        functionName: String? = null
+    ): Pair<InterpreterState, Value> {
         if (function !is Value.FunctionValue) throw RuntimeException("Expected function value")
         if (function.params.size != args.size) throw RuntimeException("Function expects ${function.params.size} arguments but got ${args.size}")
 
@@ -298,10 +339,12 @@ class Interpreter {
         val (finalState, flow) = executeStmt(function.body, callState)
         val returnValue = when (flow) {
             is ControlFlow.Return -> flow.value
-            is ControlFlow.Normal -> when (flow) { is ControlFlow.Normal -> flow.value; else -> Value.NoneValue }
+            is ControlFlow.Normal -> when (flow) {
+                else -> flow.value
+            }
+
             is ControlFlow.Break -> throw RuntimeException("Break statement outside loop")
             is ControlFlow.Continue -> throw RuntimeException("Continue statement outside loop")
-            else -> Value.NoneValue
         }
 
         return Pair(state.copy(heap = finalState.heap, nextRef = finalState.nextRef), returnValue)
