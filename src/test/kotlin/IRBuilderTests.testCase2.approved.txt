@@ -1,8 +1,1 @@
- fun factorial(n) {
-  {
-     return if (n == 0.0) then 1.0 else n * factorial(n - 1.0);
-  }
-}
- let num = readInput();
- let fact = factorial(num);
- print(fact);
+Ok(value=ProgramUnit(stmt=[Function(name=factorial, params=[n], body=BlockStmt(stmts=[ReturnStmt(expr=IfExpr(condition=BinaryExpr(left=VarExpr(name=n), op===, right=NumberLiteral(value=0.0)), thenExpr=NumberLiteral(value=1.0), elseExpr=BinaryExpr(left=VarExpr(name=n), op=*, right=NamedFunctionCall(name=factorial, arguments=[BinaryExpr(left=VarExpr(name=n), op=-, right=NumberLiteral(value=1.0))]))))])), LetStmt(name=num, expr=ReadInputExpr), LetStmt(name=fact, expr=NamedFunctionCall(name=factorial, arguments=[VarExpr(name=num)])), PrintStmt(args=[VarExpr(name=fact)])]))

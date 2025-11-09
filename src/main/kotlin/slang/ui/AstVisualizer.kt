@@ -348,7 +348,6 @@ class ASTViewer : JFrame("Slang AST Visualizer") {
     private fun updateTree(ast: SlastNode) {
         val root = ast.toTreeNode()
         val newTree = JTree(root)
-//        newTree.cellRenderer = ASTTreeCellRenderer()
         expandAllNodes(newTree)
         astPanel.removeAll()
         astPanel.add(JScrollPane(newTree), BorderLayout.CENTER)

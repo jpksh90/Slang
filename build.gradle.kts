@@ -60,3 +60,22 @@ tasks.register("showGui", JavaExec::class) {
 application {
     mainClass.set("MainKt")
 }
+
+// Task to approve snapshot tests using the helper script.
+// Dry-run by default; pass -PapproveSnapshotsCommit=true to actually git-mv and commit.
+tasks.register<Exec>("approveSnapshots") {
+    group = "verification"
+    description = "Run scripts/approve_snapshots.sh (dry-run). Use -PapproveSnapshotsCommit=true to commit approvals."
+
+    val commit = (project.findProperty("approveSnapshotsCommit") as String?).toBoolean()
+    val scriptFile = file("scripts/approve_snapshots.sh")
+    if (!scriptFile.exists()) {
+        throw GradleException("Snapshot approval script not found: ${scriptFile.absolutePath}")
+    }
+
+    // Use bash for portability and to support script features.
+    commandLine = listOf("bash", scriptFile.absolutePath) + if (commit) listOf("--commit") else emptyList()
+
+    // Stream output to console so user sees what will happen.
+    isIgnoreExitValue = false
+}
