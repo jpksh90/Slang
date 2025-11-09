@@ -1,11 +1,1 @@
- let a = readInput();
- let b = readInput();
- if (a > b) {
-  {
-     print(a);
-  }
-} else {
-  {
-     print(b);
-  }
-}
+Ok(value=ProgramUnit(stmt=[LetStmt(name=a, expr=ReadInputExpr), LetStmt(name=b, expr=ReadInputExpr), IfStmt(condition=BinaryExpr(left=VarExpr(name=a), op=>, right=VarExpr(name=b)), thenBody=BlockStmt(stmts=[PrintStmt(args=[VarExpr(name=a)])]), elseBody=BlockStmt(stmts=[PrintStmt(args=[VarExpr(name=b)])]))]))

@@ -1,7 +1,8 @@
 import org.approvaltests.Approvals
-import slang.parser.FileParserInterface
-import slang.slast.SlastBuilder
-import slang.slast.prettyPrint
+import slang.hlir.ParseTree2HlirTrasnformer
+import slang.parser.File2ParseTreeTransformer
+import slang.common.invoke
+import slang.common.then
 import java.io.File
 import java.net.URL
 import kotlin.test.Test
@@ -13,14 +14,9 @@ class IRBuilderTests {
     }
 
     fun buildAst(testCase: URL): String {
-        val file = File(testCase.toURI())
-        val parser = FileParserInterface(file)
-        val result = parser.parse()
-        if (result) {
-            val irBuilder = SlastBuilder(parser.compilationUnit).compilationUnit
-            return irBuilder.prettyPrint()
-        }
-        return ""
+        val hlir = (File2ParseTreeTransformer() then ParseTree2HlirTrasnformer())
+            .invoke(File(testCase.toURI()))
+        return hlir.toString()
     }
 
     @Test

@@ -1,4 +1,4 @@
-package slang.visualizer
+package slang.ui
 
 import com.formdev.flatlaf.FlatDarculaLaf
 import org.fife.ui.rsyntaxtextarea.AbstractTokenMakerFactory
@@ -6,9 +6,7 @@ import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
 import org.fife.ui.rsyntaxtextarea.Theme
 import org.fife.ui.rsyntaxtextarea.TokenMakerFactory
 import org.fife.ui.rtextarea.RTextScrollPane
-import slang.parser.StringParserInterface
-import slang.slast.*
-import slang.slast.Function
+import slang.hlir.*
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.GridLayout
@@ -24,88 +22,86 @@ import javax.swing.tree.DefaultMutableTreeNode
 
 
 fun parseProgram(input: String, errorListModel: DefaultListModel<String>, statusLabel: JLabel): SlastNode {
-    val parser = StringParserInterface(input)
-    val status = parser.parse()
-    val parseTree = parser.compilationUnit
+
+    // Normalize error payloads to List<String>
+    val ast =string2hlir(input)
+        .mapError { errPayload -> errPayload.map { it.toString() } }
 
     SwingUtilities.invokeLater {
         errorListModel.clear()
-        errorListModel.addAll(parser.getErrors().map { it.toString() })
+        ast.fold(
+            onSuccess = { /* no errors to add */ },
+            onFailure = { errs -> errs.forEach { errorListModel.addElement(it) } }
+        )
     }
 
-    if (status) {
-        statusLabel.text = "Parsing failed with errors. Dumping incomplete AST"
-    } else {
-        statusLabel.text = "Parsing completed successfully"
-    }
-
-    val irBuilder = SlastBuilder(parseTree)
-    val ast = irBuilder.compilationUnit
-    return ast
+    val failed = ast.fold({ false }, { true })
+    statusLabel.text = if (failed) "Parsing failed with errors. Dumping incomplete AST" else "Parsing completed successfully"
+    return ast.getOrNull()!!
 }
 
 fun SlastNode.toTreeNode(): DefaultMutableTreeNode {
     return when (this) {
-        is CompilationUnit -> DefaultMutableTreeNode("Program").apply { stmt.forEach { add(it.toTreeNode()) } }
-        is LetStmt -> DefaultMutableTreeNode("LetStmt(${this.prettyPrint()})").apply {
+        is ProgramUnit -> DefaultMutableTreeNode("Program").apply { stmt.forEach { add(it.toTreeNode()) } }
+        is Stmt.LetStmt -> DefaultMutableTreeNode("LetStmt(${this.prettyPrint()})").apply {
             add(DefaultMutableTreeNode("id=${name}"))
             add(expr.toTreeNode())
         }
 
-        is AssignStmt -> DefaultMutableTreeNode("AssignStmt(${this.prettyPrint()})").apply {
+        is Stmt.AssignStmt -> DefaultMutableTreeNode("AssignStmt(${this.prettyPrint()})").apply {
             add(lhs.toTreeNode())
             add(expr.toTreeNode())
         }
 
-        is InlinedFunction -> DefaultMutableTreeNode("InlineFunction").apply {
+        is Expr.InlinedFunction -> DefaultMutableTreeNode("InlineFunction").apply {
             params.forEach { add(DefaultMutableTreeNode(it)) }
             add(body.toTreeNode())
         }
 
-        is Function -> DefaultMutableTreeNode("FunImpure(${name})").apply {
+        is Stmt.Function -> DefaultMutableTreeNode("FunImpure(${name})").apply {
             params.forEach { add(DefaultMutableTreeNode(it)) }
             add(body.toTreeNode())
         }
 
-        is WhileStmt -> DefaultMutableTreeNode("While").apply {
+        is Stmt.WhileStmt -> DefaultMutableTreeNode("While").apply {
             add(condition.toTreeNode())
             add(body.toTreeNode())
         }
 
-        is PrintStmt -> DefaultMutableTreeNode("PrintStmt").apply {
+        is Stmt.PrintStmt -> DefaultMutableTreeNode("PrintStmt").apply {
             args.forEach { add(it.toTreeNode()) }
         }
 
-        is IfStmt -> DefaultMutableTreeNode("IfStmt").apply {
+        is Stmt.IfStmt -> DefaultMutableTreeNode("IfStmt").apply {
             add(condition.toTreeNode())
             add(thenBody.toTreeNode())
             add(elseBody.toTreeNode())
         }
 
-        is ExprStmt -> DefaultMutableTreeNode("ExprStmt").apply { add(expr.toTreeNode()) }
-        is ReturnStmt -> DefaultMutableTreeNode("ReturnStmt").apply { add(expr.toTreeNode()) }
-        is BlockStmt -> DefaultMutableTreeNode("BlockStmt").apply { stmts.forEach { add(it.toTreeNode()) } }
-        is NumberLiteral -> DefaultMutableTreeNode("Number($value)")
-        is BoolLiteral -> DefaultMutableTreeNode("Boolean($value)")
-        is VarExpr -> DefaultMutableTreeNode("VarExpr($name)")
-        is ReadInputExpr -> DefaultMutableTreeNode("ReadInputExpr")
-        is NamedFunctionCall -> DefaultMutableTreeNode("FuncCall(${name})").apply { arguments.forEach { add(it.toTreeNode()) } }
-        is ExpressionFunctionCall -> DefaultMutableTreeNode("FuncCall(${target})").apply { arguments.forEach { add(it.toTreeNode()) } }
-        is BinaryExpr -> DefaultMutableTreeNode("BinaryExpr(${this.prettyPrint()})").apply {
+        is Stmt.ExprStmt -> DefaultMutableTreeNode("ExprStmt").apply { add(expr.toTreeNode()) }
+        is Stmt.ReturnStmt -> DefaultMutableTreeNode("ReturnStmt").apply { add(expr.toTreeNode()) }
+        is Stmt.BlockStmt -> DefaultMutableTreeNode("BlockStmt").apply { stmts.forEach { add(it.toTreeNode()) } }
+        is Expr.NumberLiteral -> DefaultMutableTreeNode("Number($value)")
+        is Expr.BoolLiteral -> DefaultMutableTreeNode("Boolean($value)")
+        is Expr.VarExpr -> DefaultMutableTreeNode("VarExpr($name)")
+        is Expr.ReadInputExpr -> DefaultMutableTreeNode("ReadInputExpr")
+        is Expr.NamedFunctionCall -> DefaultMutableTreeNode("FuncCall(${name})").apply { arguments.forEach { add(it.toTreeNode()) } }
+        is Expr.ExpressionFunctionCall -> DefaultMutableTreeNode("FuncCall(${target})").apply { arguments.forEach { add(it.toTreeNode()) } }
+        is Expr.BinaryExpr -> DefaultMutableTreeNode("BinaryExpr(${this.prettyPrint()})").apply {
             add(left.toTreeNode())
             add(DefaultMutableTreeNode("op=${op}"))
             add(right.toTreeNode())
         }
 
-        is IfExpr -> DefaultMutableTreeNode("IfExpr").apply {
+        is Expr.IfExpr -> DefaultMutableTreeNode("IfExpr").apply {
             add(condition.toTreeNode())
             add(thenExpr.toTreeNode())
             add(elseExpr.toTreeNode())
         }
 
-        is ParenExpr -> DefaultMutableTreeNode("ParenExpr(${this.prettyPrint()})").apply { add(expr.toTreeNode()) }
-        is NoneValue -> DefaultMutableTreeNode("$this")
-        is Record -> DefaultMutableTreeNode("Record").apply {
+        is Expr.ParenExpr -> DefaultMutableTreeNode("ParenExpr(${this.prettyPrint()})").apply { add(expr.toTreeNode()) }
+        is Expr.NoneValue -> DefaultMutableTreeNode("$this")
+        is Expr.Record -> DefaultMutableTreeNode("Record").apply {
             expression.forEach {
                 add(DefaultMutableTreeNode("ID(${it.first})"))
                 add(DefaultMutableTreeNode("Expr(${it.second.prettyPrint()})").apply {
@@ -114,29 +110,29 @@ fun SlastNode.toTreeNode(): DefaultMutableTreeNode {
             }
         }
 
-        is StringLiteral -> DefaultMutableTreeNode("StringExpr($value)")
-        is DerefExpr -> DefaultMutableTreeNode("DerefExpr(${expr.toTreeNode()})")
-        is RefExpr -> DefaultMutableTreeNode("RefExpr(${expr.toTreeNode()})")
-        is DerefStmt -> DefaultMutableTreeNode("DerefStmt(${this.prettyPrint()})").apply {
+        is Expr.StringLiteral -> DefaultMutableTreeNode("StringExpr($value)")
+        is Expr.DerefExpr -> DefaultMutableTreeNode("DerefExpr(${expr.toTreeNode()})")
+        is Expr.RefExpr -> DefaultMutableTreeNode("RefExpr(${expr.toTreeNode()})")
+        is Stmt.DerefStmt -> DefaultMutableTreeNode("DerefStmt(${this.prettyPrint()})").apply {
             add(lhs.toTreeNode())
             add(rhs.toTreeNode())
         }
 
-        is FieldAccess -> DefaultMutableTreeNode("FieldAccess(${this.prettyPrint()})").apply {
+        is Expr.FieldAccess -> DefaultMutableTreeNode("FieldAccess(${this.prettyPrint()})").apply {
             add(lhs.toTreeNode())
             add(DefaultMutableTreeNode(rhs))
         }
 
-        is ArrayAccess -> DefaultMutableTreeNode("ArrayAccess(${this.prettyPrint()})").apply {
+        is Expr.ArrayAccess -> DefaultMutableTreeNode("ArrayAccess(${this.prettyPrint()})").apply {
             add(array.toTreeNode())
             add(index.toTreeNode())
         }
-        is ArrayInit -> DefaultMutableTreeNode("ArrayInit").apply {
+        is Expr.ArrayInit -> DefaultMutableTreeNode("ArrayInit").apply {
             elements.forEach { add(it.toTreeNode()) }
         }
-        Break -> DefaultMutableTreeNode("break")
-        Continue -> DefaultMutableTreeNode("continue")
-        is StructStmt -> DefaultMutableTreeNode("StructStmt").apply {
+        Stmt.Break -> DefaultMutableTreeNode("break")
+        Stmt.Continue -> DefaultMutableTreeNode("continue")
+        is Stmt.StructStmt -> DefaultMutableTreeNode("StructStmt").apply {
             add(DefaultMutableTreeNode("id=${id}"))
             fields.forEach {
                 add(DefaultMutableTreeNode("Field(${it.component1()})").apply {
@@ -352,7 +348,6 @@ class ASTViewer : JFrame("Slang AST Visualizer") {
     private fun updateTree(ast: SlastNode) {
         val root = ast.toTreeNode()
         val newTree = JTree(root)
-//        newTree.cellRenderer = ASTTreeCellRenderer()
         expandAllNodes(newTree)
         astPanel.removeAll()
         astPanel.add(JScrollPane(newTree), BorderLayout.CENTER)

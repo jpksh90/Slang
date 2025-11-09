@@ -1,0 +1,1 @@
+Err(error=[[35:4 --  35:13] - Variable z already declared in this scope, [36:4 --  36:13] - Variable n already declared in this scope])

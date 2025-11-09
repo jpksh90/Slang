@@ -1,10 +1,1 @@
- fun mod(a, b) {
-  {
-     return if (a < b) then a else mod(a - b, b);
-  }
-}
- fun gcd(a, b) {
-  {
-     return if (b == 0.0) then a else gcd(b, mod(a, b));
-  }
-}
+Ok(value=ProgramUnit(stmt=[Function(name=mod, params=[a, b], body=BlockStmt(stmts=[ReturnStmt(expr=IfExpr(condition=BinaryExpr(left=VarExpr(name=a), op=<, right=VarExpr(name=b)), thenExpr=VarExpr(name=a), elseExpr=NamedFunctionCall(name=mod, arguments=[BinaryExpr(left=VarExpr(name=a), op=-, right=VarExpr(name=b)), VarExpr(name=b)])))])), Function(name=gcd, params=[a, b], body=BlockStmt(stmts=[ReturnStmt(expr=IfExpr(condition=BinaryExpr(left=VarExpr(name=b), op===, right=NumberLiteral(value=0.0)), thenExpr=VarExpr(name=a), elseExpr=NamedFunctionCall(name=gcd, arguments=[VarExpr(name=b), NamedFunctionCall(name=mod, arguments=[VarExpr(name=a), VarExpr(name=b)])])))]))]))

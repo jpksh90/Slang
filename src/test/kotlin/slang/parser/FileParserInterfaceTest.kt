@@ -1,6 +1,6 @@
 package slang.parser
 
-import org.junit.jupiter.api.Assertions.*
+import slang.hlir.file2hlir
 import java.io.File
 import kotlin.test.Test
 
@@ -8,14 +8,14 @@ class FileParserInterfaceTest {
     @Test
     fun test1() {
         val file = "src/test/resources/disallowed.slang"
-        val parser = FileParserInterface(File(file))
-        assertFalse(parser.parse())
+        val parseTree = file2hlir(File(file))
+        assert(parseTree.isErr)
     }
 
     @Test
     fun test2() {
         val file = "src/test/resources/mandelbrot.slang"
-        val parser = FileParserInterface(File(file))
-        assertTrue(parser.parse())
+        val parseTree = file2hlir(File(file))
+        assert(parseTree.isOk)
     }
 }

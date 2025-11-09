@@ -1,4 +1,4 @@
-package slang.slast
+package slang.hlir
 
 import SlangBaseVisitor
 import SlangLexer
@@ -6,207 +6,209 @@ import SlangParser
 import org.antlr.v4.runtime.ANTLRInputStream
 import org.antlr.v4.runtime.CommonTokenStream
 import org.antlr.v4.runtime.ParserRuleContext
-import slang.parser.SlangParserErrorListener
+import slang.common.CodeInfo
+import slang.common.CodeInfo.Companion.generic
+import slang.parser.*
+import slang.common.Result
+import slang.common.Transform
+import slang.common.invoke
+import slang.common.then
+import java.io.File
 
 
 class SlastBuilder(ctx: SlangParser.CompilationUnitContext) {
-    val compilationUnit: CompilationUnit
+    val program: ProgramUnit
 
     init {
         val irBuilder = IRBuilder()
-        compilationUnit = irBuilder.visit(ctx) as CompilationUnit
+        program = irBuilder.visit(ctx) as ProgramUnit
     }
 
     class IRBuilder : SlangBaseVisitor<SlastNode>() {
 
-        private fun createSourceCodeInfo(ctx: ParserRuleContext): SourceCodeInfo {
-            return SourceCodeInfo(
-                ctx.start.line,
-                ctx.stop.line,
-                ctx.start.charPositionInLine,
-                ctx.stop.charPositionInLine
+        private fun createSourceCodeInfo(ctx: ParserRuleContext): CodeInfo {
+            return CodeInfo(
+                ctx.start.line, ctx.stop.line, ctx.start.charPositionInLine, ctx.stop.charPositionInLine
             )
         }
 
         override fun visitLetExpr(ctx: SlangParser.LetExprContext): SlastNode {
-            val expr = LetStmt(ctx.ID().text, visit(ctx.expr()) as Expr)
-            expr.sourceCodeInfo = createSourceCodeInfo(ctx)
+            val expr = Stmt.LetStmt(ctx.ID().text, visit(ctx.expr()) as Expr)
+            expr.codeInfo = createSourceCodeInfo(ctx)
             return expr
         }
 
         override fun visitAssignExpr(ctx: SlangParser.AssignExprContext): SlastNode {
-            val expr = AssignStmt(visit(ctx.lhs()) as Expr, visit(ctx.expr()) as Expr)
-            expr.sourceCodeInfo = createSourceCodeInfo(ctx)
+            val expr = Stmt.AssignStmt(visit(ctx.lhs()) as Expr, visit(ctx.expr()) as Expr)
+            expr.codeInfo = createSourceCodeInfo(ctx)
             return expr
         }
 
         override fun visitFunPureStmt(ctx: SlangParser.FunPureStmtContext): SlastNode {
             val params = ctx.paramList()?.ID()?.map { it.text } ?: emptyList()
             val id = ctx.ID()
-            val body = BlockStmt(listOf(ReturnStmt(visit(ctx.expr()) as Expr)))
-            val expr = Function(id.text, params, body)
-            expr.sourceCodeInfo = createSourceCodeInfo(ctx)
+            val body = Stmt.BlockStmt(listOf(Stmt.ReturnStmt(visit(ctx.expr()) as Expr)))
+            val expr = Stmt.Function(id.text, params, body)
+            expr.codeInfo = createSourceCodeInfo(ctx)
             return expr
         }
 
         override fun visitFunImpureStmt(ctx: SlangParser.FunImpureStmtContext): SlastNode {
             val params = ctx.paramList()?.ID()?.map { it.text } ?: emptyList()
             val body = ctx.stmt().map { visit(it) as Stmt }
-            val expr = Function(ctx.ID().text, params, BlockStmt(body))
-            expr.sourceCodeInfo = createSourceCodeInfo(ctx)
+            val expr = Stmt.Function(ctx.ID().text, params, Stmt.BlockStmt(body))
+            expr.codeInfo = createSourceCodeInfo(ctx)
             return expr
         }
 
 
         override fun visitFunAnonymousPureExpr(ctx: SlangParser.FunAnonymousPureExprContext): SlastNode {
             val params = ctx.paramList()?.ID()?.map { it.text } ?: emptyList()
-            val body = BlockStmt(listOf(ReturnStmt(visit(ctx.expr()) as Expr)))
-            val expr = InlinedFunction(params, body)
-            expr.sourceCodeInfo = createSourceCodeInfo(ctx)
+            val body = Stmt.BlockStmt(listOf(Stmt.ReturnStmt(visit(ctx.expr()) as Expr)))
+            val expr = Expr.InlinedFunction(params, body)
+            expr.codeInfo = createSourceCodeInfo(ctx)
             return expr
         }
 
         override fun visitFunAnonymousImpureExpr(ctx: SlangParser.FunAnonymousImpureExprContext): SlastNode {
             val params = ctx.paramList()?.ID()?.map { it.text } ?: emptyList()
             val body = ctx.stmt().map { visit(it) as Stmt }
-            val expr = InlinedFunction(params, BlockStmt(body))
-            expr.sourceCodeInfo = createSourceCodeInfo(ctx)
+            val expr = Expr.InlinedFunction(params, Stmt.BlockStmt(body))
+            expr.codeInfo = createSourceCodeInfo(ctx)
             return expr
         }
 
         override fun visitWhileStmt(ctx: SlangParser.WhileStmtContext): SlastNode {
             val condition = visit(ctx.expr()) as Expr
-            val body = BlockStmt(ctx.blockStmt().stmt().map { visit(it) as Stmt })
-            val expr = WhileStmt(condition, body)
-            expr.sourceCodeInfo = createSourceCodeInfo(ctx)
+            val body = Stmt.BlockStmt(ctx.blockStmt().stmt().map { visit(it) as Stmt })
+            val expr = Stmt.WhileStmt(condition, body)
+            expr.codeInfo = createSourceCodeInfo(ctx)
             return expr
         }
 
         override fun visitPrintStmt(ctx: SlangParser.PrintStmtContext): SlastNode {
             val args = ctx.argList()?.expr()?.map { visit(it) as Expr } ?: emptyList()
-            val expr = PrintStmt(args)
-            expr.sourceCodeInfo = createSourceCodeInfo(ctx)
+            val expr = Stmt.PrintStmt(args)
+            expr.codeInfo = createSourceCodeInfo(ctx)
             return expr
         }
 
         override fun visitIfThenElseStmt(ctx: SlangParser.IfThenElseStmtContext): SlastNode {
             val condition = visit(ctx.expr()) as Expr
-            val thenBody = BlockStmt(ctx.blockStmt(0).stmt().map { visit(it) as Stmt })
-            val elseBody = BlockStmt(ctx.blockStmt(1).stmt().map { visit(it) as Stmt })
-            val expr = IfStmt(condition, thenBody, elseBody)
-            expr.sourceCodeInfo = createSourceCodeInfo(ctx)
+            val thenBody = Stmt.BlockStmt(ctx.blockStmt(0).stmt().map { visit(it) as Stmt })
+            val elseBody = Stmt.BlockStmt(ctx.blockStmt(1).stmt().map { visit(it) as Stmt })
+            val expr = Stmt.IfStmt(condition, thenBody, elseBody)
+            expr.codeInfo = createSourceCodeInfo(ctx)
             return expr
         }
 
         override fun visitExprStmt(ctx: SlangParser.ExprStmtContext): SlastNode {
-            val expr = ExprStmt(visit(ctx.expr()) as Expr)
-            expr.sourceCodeInfo = createSourceCodeInfo(ctx)
+            val expr = Stmt.ExprStmt(visit(ctx.expr()) as Expr)
+            expr.codeInfo = createSourceCodeInfo(ctx)
             return expr
         }
 
         override fun visitReturnStmt(ctx: SlangParser.ReturnStmtContext): SlastNode {
-            val expr = ReturnStmt(visit(ctx.expr()) as Expr)
-            expr.sourceCodeInfo = createSourceCodeInfo(ctx)
+            val expr = Stmt.ReturnStmt(visit(ctx.expr()) as Expr)
+            expr.codeInfo = createSourceCodeInfo(ctx)
             return expr
         }
 
         override fun visitIntExpr(ctx: SlangParser.IntExprContext): SlastNode {
-            val expr = NumberLiteral(ctx.NUMBER().text.toDouble())
-            expr.sourceCodeInfo = createSourceCodeInfo(ctx)
+            val expr = Expr.NumberLiteral(ctx.NUMBER().text.toDouble())
+            expr.codeInfo = createSourceCodeInfo(ctx)
             return expr
         }
 
         override fun visitBoolExpr(ctx: SlangParser.BoolExprContext): SlastNode {
-            val expr = BoolLiteral(ctx.BOOL().text.toBoolean())
-            expr.sourceCodeInfo = createSourceCodeInfo(ctx)
+            val expr = Expr.BoolLiteral(ctx.BOOL().text.toBoolean())
+            expr.codeInfo = createSourceCodeInfo(ctx)
             return expr
         }
 
         override fun visitVarExpr(ctx: SlangParser.VarExprContext): SlastNode {
-            val expr = VarExpr(ctx.ID().text)
-            expr.sourceCodeInfo = createSourceCodeInfo(ctx)
+            val expr = Expr.VarExpr(ctx.ID().text)
+            expr.codeInfo = createSourceCodeInfo(ctx)
             return expr
         }
 
         override fun visitReadInputExpr(ctx: SlangParser.ReadInputExprContext): SlastNode {
-            val expr = ReadInputExpr
-            expr.sourceCodeInfo = createSourceCodeInfo(ctx)
+            val expr = Expr.ReadInputExpr
+            expr.codeInfo = createSourceCodeInfo(ctx)
             return expr
         }
 
         override fun visitFuncCallExpr(ctx: SlangParser.FuncCallExprContext): SlastNode {
             val args = ctx.argList()?.expr()?.map { visit(it) as Expr } ?: emptyList()
             val target = visit(ctx.expr()) as Expr
-            val expr = if (target is VarExpr) {
-                NamedFunctionCall(target.name, args)
+            val expr = if (target is Expr.VarExpr) {
+                Expr.NamedFunctionCall(target.name, args)
             } else {
-                ExpressionFunctionCall(target, args)
+                Expr.ExpressionFunctionCall(target, args)
             }
-            expr.sourceCodeInfo = createSourceCodeInfo(ctx)
+            expr.codeInfo = createSourceCodeInfo(ctx)
             return expr
         }
 
         override fun visitArithmeticExpr(ctx: SlangParser.ArithmeticExprContext): SlastNode {
             val expr =
-                BinaryExpr(visit(ctx.expr(0)) as Expr, Operator.fromValue(ctx.op.text), visit(ctx.expr(1)) as Expr)
-            expr.sourceCodeInfo = createSourceCodeInfo(ctx)
+                Expr.BinaryExpr(visit(ctx.expr(0)) as Expr, Operator.fromValue(ctx.op.text), visit(ctx.expr(1)) as Expr)
+            expr.codeInfo = createSourceCodeInfo(ctx)
             return expr
         }
 
         override fun visitComparisonExpr(ctx: SlangParser.ComparisonExprContext): SlastNode {
             val expr =
-                BinaryExpr(visit(ctx.expr(0)) as Expr, Operator.fromValue(ctx.op.text), visit(ctx.expr(1)) as Expr)
-            expr.sourceCodeInfo = createSourceCodeInfo(ctx)
+                Expr.BinaryExpr(visit(ctx.expr(0)) as Expr, Operator.fromValue(ctx.op.text), visit(ctx.expr(1)) as Expr)
+            expr.codeInfo = createSourceCodeInfo(ctx)
             return expr
         }
 
         override fun visitBooleanExpr(ctx: SlangParser.BooleanExprContext): SlastNode {
             val expr =
-                BinaryExpr(visit(ctx.expr(0)) as Expr, Operator.fromValue(ctx.op.text), visit(ctx.expr(1)) as Expr)
-            expr.sourceCodeInfo = createSourceCodeInfo(ctx)
+                Expr.BinaryExpr(visit(ctx.expr(0)) as Expr, Operator.fromValue(ctx.op.text), visit(ctx.expr(1)) as Expr)
+            expr.codeInfo = createSourceCodeInfo(ctx)
             return expr
         }
 
         override fun visitIfExpr(ctx: SlangParser.IfExprContext): SlastNode {
-            val expr = IfExpr(
-                visit(ctx.expr(0)) as Expr,
-                visit(ctx.expr(1)) as Expr,
-                visit(ctx.expr(2)) as Expr
+            val expr = Expr.IfExpr(
+                visit(ctx.expr(0)) as Expr, visit(ctx.expr(1)) as Expr, visit(ctx.expr(2)) as Expr
             )
-            expr.sourceCodeInfo = createSourceCodeInfo(ctx)
+            expr.codeInfo = createSourceCodeInfo(ctx)
             return expr
         }
 
         override fun visitParenExpr(ctx: SlangParser.ParenExprContext): SlastNode {
-            val expr = ParenExpr(visit(ctx.expr()) as Expr)
-            expr.sourceCodeInfo = createSourceCodeInfo(ctx)
+            val expr = Expr.ParenExpr(visit(ctx.expr()) as Expr)
+            expr.codeInfo = createSourceCodeInfo(ctx)
             return expr
         }
 
         override fun visitForStmt(ctx: SlangParser.ForStmtContext): SlastNode {
-            val initialization = AssignStmt(visit(ctx.ID()) as Expr, visit(ctx.expr(0)) as Expr)
+            val initialization = Stmt.AssignStmt(visit(ctx.ID()) as Expr, visit(ctx.expr(0)) as Expr)
             val condition = visit(ctx.expr(1)) as Expr
             val update = visit(ctx.expr(2)) as Stmt
             val body = ctx.blockStmt().stmt().map { visit(it) as Stmt }
-            val expr = BlockStmt(listOf(initialization, WhileStmt(condition, BlockStmt(body + update))))
-            expr.sourceCodeInfo = createSourceCodeInfo(ctx)
+            val expr = Stmt.BlockStmt(listOf(initialization, Stmt.WhileStmt(condition, Stmt.BlockStmt(body + update))))
+            expr.codeInfo = createSourceCodeInfo(ctx)
             return expr
         }
 
         override fun visitCompilationUnit(ctx: SlangParser.CompilationUnitContext): SlastNode {
             val expr = if (ctx.stmt() == null) {
-                CompilationUnit(emptyList())
+                ProgramUnit(emptyList())
             } else {
-                val statements = ctx.stmt().map { visit(it) as Stmt }
-                CompilationUnit(statements)
+                val stmts = ctx.stmt().map { visit(it) as Stmt }
+                ProgramUnit(stmts)
             }
-            expr.sourceCodeInfo = createSourceCodeInfo(ctx)
+            expr.codeInfo = createSourceCodeInfo(ctx)
             return expr
         }
 
         override fun visitNoneValue(ctx: SlangParser.NoneValueContext): SlastNode {
-            val expr = NoneValue
-            expr.sourceCodeInfo = createSourceCodeInfo(ctx)
+            val expr = Expr.NoneValue
+            expr.codeInfo = createSourceCodeInfo(ctx)
             return expr
         }
 
@@ -217,87 +219,87 @@ class SlastBuilder(ctx: SlangParser.CompilationUnitContext) {
             for (i in 0 until recordIds.size) {
                 recordElementPairs.addLast(Pair(recordIds[i].text, visit(recordExprs[i]) as Expr))
             }
-            val expr = Record(recordElementPairs)
-            expr.sourceCodeInfo = createSourceCodeInfo(ctx)
+            val expr = Expr.Record(recordElementPairs)
+            expr.codeInfo = createSourceCodeInfo(ctx)
             return expr
         }
 
         override fun visitStringExpr(ctx: SlangParser.StringExprContext): SlastNode {
-            val expr = StringLiteral(ctx.STRING().text)
-            expr.sourceCodeInfo = createSourceCodeInfo(ctx)
+            val expr = Expr.StringLiteral(ctx.STRING().text)
+            expr.codeInfo = createSourceCodeInfo(ctx)
             return expr
         }
 
         override fun visitRefExpr(ctx: SlangParser.RefExprContext): SlastNode {
-            val expr = RefExpr(visit(ctx.expr()) as Expr)
-            expr.sourceCodeInfo = createSourceCodeInfo(ctx)
+            val expr = Expr.RefExpr(visit(ctx.expr()) as Expr)
+            expr.codeInfo = createSourceCodeInfo(ctx)
             return expr
         }
 
         override fun visitDerefExpr(ctx: SlangParser.DerefExprContext): SlastNode {
-            val expr = DerefExpr(visit(ctx.deref()) as Expr)
-            expr.sourceCodeInfo = createSourceCodeInfo(ctx)
+            val expr = Expr.DerefExpr(visit(ctx.deref()) as Expr)
+            expr.codeInfo = createSourceCodeInfo(ctx)
             return expr
         }
 
         override fun visitDeref(ctx: SlangParser.DerefContext): SlastNode {
             val expr = visit(ctx.expr())
-            expr.sourceCodeInfo = createSourceCodeInfo(ctx)
+            expr.codeInfo = createSourceCodeInfo(ctx)
             return expr
         }
 
         override fun visitLhs(ctx: SlangParser.LhsContext): SlastNode {
             val expr = if (ctx.deref() != null) {
-                DerefExpr(visit(ctx.deref()) as Expr)
+                Expr.DerefExpr(visit(ctx.deref()) as Expr)
             } else if (ctx.fieldAccess() != null) {
                 visit(ctx.fieldAccess())
             } else {
-                VarExpr(ctx.ID().text)
+                Expr.VarExpr(ctx.ID().text)
             }
-            expr.sourceCodeInfo = createSourceCodeInfo(ctx)
+            expr.codeInfo = createSourceCodeInfo(ctx)
             return expr
         }
 
         override fun visitPrimaryExprWrapper(ctx: SlangParser.PrimaryExprWrapperContext): SlastNode {
             val expr = visit(ctx.primaryExpr())
-            expr.sourceCodeInfo = createSourceCodeInfo(ctx)
+            expr.codeInfo = createSourceCodeInfo(ctx)
             return expr
         }
 
         override fun visitFieldAccess(ctx: SlangParser.FieldAccessContext): SlastNode {
-            val expr = FieldAccess(visit(ctx.expr()) as Expr, VarExpr(ctx.ID().text))
-            expr.sourceCodeInfo = createSourceCodeInfo(ctx)
+            val expr = Expr.FieldAccess(visit(ctx.expr()) as Expr, Expr.VarExpr(ctx.ID().text))
+            expr.codeInfo = createSourceCodeInfo(ctx)
             return expr
         }
 
         override fun visitFieldAccessExpr(ctx: SlangParser.FieldAccessExprContext): SlastNode {
-            val expr = FieldAccess(visit(ctx.expr()) as Expr, VarExpr(ctx.ID().text))
-            expr.sourceCodeInfo = createSourceCodeInfo(ctx)
+            val expr = Expr.FieldAccess(visit(ctx.expr()) as Expr, Expr.VarExpr(ctx.ID().text))
+            expr.codeInfo = createSourceCodeInfo(ctx)
             return expr
         }
 
         override fun visitDoWhileStmt(ctx: SlangParser.DoWhileStmtContext): SlastNode {
             val body = visit(ctx.blockStmt()) as Stmt
             val condition = visit(ctx.expr())
-            val expr = BlockStmt(listOf(body, WhileStmt(condition as Expr, body as BlockStmt)))
-            expr.sourceCodeInfo = createSourceCodeInfo(ctx)
+            val expr = Stmt.BlockStmt(listOf(body, Stmt.WhileStmt(condition as Expr, body as Stmt.BlockStmt)))
+            expr.codeInfo = createSourceCodeInfo(ctx)
             return expr
         }
 
         override fun visitBlockStmt(ctx: SlangParser.BlockStmtContext): SlastNode {
-            val expr = BlockStmt(ctx.stmt().map { visit(it) as Stmt })
-            expr.sourceCodeInfo = createSourceCodeInfo(ctx)
+            val expr = Stmt.BlockStmt(ctx.stmt().map { visit(it) as Stmt })
+            expr.codeInfo = createSourceCodeInfo(ctx)
             return expr
         }
 
         override fun visitStructStmt(ctx: SlangParser.StructStmtContext): SlastNode {
             val id = ctx.ID().text
             val fields = HashMap<String, Expr>()
-            val methods = mutableListOf<Function>()
+            val methods = mutableListOf<Stmt.Function>()
 
             for (argument in ctx.constructorMembers().ID()) {
                 val fieldName = argument.text
-                fields[fieldName] = NoneValue
+                fields[fieldName] = Expr.NoneValue
             }
 
             for (member in ctx.structMember()) {
@@ -308,42 +310,61 @@ class SlastBuilder(ctx: SlangParser.CompilationUnitContext) {
                 }
 
                 if (member is SlangParser.StructMethodPureContext) {
-                    methods.addLast(visit(member) as Function)
+                    methods.addLast(visit(member) as Stmt.Function)
                 }
 
                 if (member is SlangParser.StructMethodImpureContext) {
-                    methods.addLast(visit(member) as Function)
+                    methods.addLast(visit(member) as Stmt.Function)
                 }
             }
-            val expr = StructStmt(id, methods, fields)
-            expr.sourceCodeInfo = createSourceCodeInfo(ctx)
+            val expr = Stmt.StructStmt(id, methods, fields)
+            expr.codeInfo = createSourceCodeInfo(ctx)
             return expr
         }
 
         override fun visitArrayLiteralExpression(ctx: SlangParser.ArrayLiteralExpressionContext): SlastNode {
             val elements = ctx.exprList()?.expr()?.map { visit(it) as Expr } ?: emptyList()
-            val expr = ArrayInit(elements)
-            expr.sourceCodeInfo = createSourceCodeInfo(ctx)
+            val expr = Expr.ArrayInit(elements)
+            expr.codeInfo = createSourceCodeInfo(ctx)
             return expr
         }
 
         override fun visitArrayAccessExpr(ctx: SlangParser.ArrayAccessExprContext): SlastNode {
             val array = visit(ctx.expr(0)) as Expr
             val index = visit(ctx.expr(1)) as Expr
-            val expr = ArrayAccess(array, index)
-            expr.sourceCodeInfo = createSourceCodeInfo(ctx)
+            val expr = Expr.ArrayAccess(array, index)
+            expr.codeInfo = createSourceCodeInfo(ctx)
             return expr
         }
 
         override fun visitBreakStmt(ctx: SlangParser.BreakStmtContext?): SlastNode {
-            return Break
+            return Stmt.Break
         }
 
         override fun visitContinueStmt(ctx: SlangParser.ContinueStmtContext?): SlastNode {
-            return Continue
+            return Stmt.Continue
         }
 
     }
+}
+
+class ParseTree2HlirTrasnformer() : Transform<ParseTree, ProgramUnit> {
+
+    override fun transform(input: ParseTree): Result<ProgramUnit, List<CompilerError>> =
+        when (val hlir = SlastBuilder.IRBuilder().visit(input)) {
+            is ProgramUnit -> Result.ok(hlir)
+            else -> Result.err(listOf(CompilerError(generic, "Errors encountered while parsing $input")))
+        }
+}
+
+fun file2hlir(file : File) : Result<ProgramUnit, List<CompilerError>> {
+    val transformers = File2ParseTreeTransformer() then ParseTree2HlirTrasnformer()
+    return transformers.invoke(file)
+}
+
+fun string2hlir(string: String) : Result<ProgramUnit, List<CompilerError>> {
+    val transformers = String2ParseTreeTransformer() then ParseTree2HlirTrasnformer()
+    return transformers.invoke(string)
 }
 
 fun main() {
@@ -358,8 +379,8 @@ fun main() {
 
         val parseTree = parser.compilationUnit()
 
-        val IRBuilder = SlastBuilder.IRBuilder()
-        val ast = IRBuilder.visit(parseTree) as CompilationUnit
+        val builder = SlastBuilder.IRBuilder()
+        val ast = builder.visit(parseTree) as ProgramUnit
         return ast
     }
 

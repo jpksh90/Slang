@@ -1,6 +1,1 @@
- let x = 10.0;
- let y = 5.0;
- let sum = x + y;
- let product = x * y;
- print(sum);
- print(product);
+Ok(value=ProgramUnit(stmt=[LetStmt(name=x, expr=NumberLiteral(value=10.0)), LetStmt(name=y, expr=NumberLiteral(value=5.0)), LetStmt(name=sum, expr=BinaryExpr(left=VarExpr(name=x), op=+, right=VarExpr(name=y))), LetStmt(name=product, expr=BinaryExpr(left=VarExpr(name=x), op=*, right=VarExpr(name=y))), PrintStmt(args=[VarExpr(name=sum)]), PrintStmt(args=[VarExpr(name=product)])]))
