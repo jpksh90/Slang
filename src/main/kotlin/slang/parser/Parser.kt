@@ -42,10 +42,10 @@ open class Parser {
     }
 }
 
-class String2ParseTreeTransformer : Transform<String, ParseTree> {
+class String2ParseTreeTransformer : Transform<String, ParseTree, ParseErrors> {
     override fun transform(input: String): Result<ParseTree, ParseErrors> = Parser().parse(ANTLRInputStream(input))
 }
 
-class File2ParseTreeTransformer : Transform<File, ParseTree> {
+class File2ParseTreeTransformer : Transform<File, ParseTree, ParseErrors> {
     override fun transform(input: File): Result<ParseTree, ParseErrors> = Parser().parse(ANTLRInputStream(input.inputStream()))
 }

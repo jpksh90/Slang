@@ -354,7 +354,7 @@ class SlastBuilder(
     }
 }
 
-class ParseTree2HlirTrasnformer : Transform<ParseTree, ProgramUnit> {
+class ParseTree2HlirTrasnformer : Transform<ParseTree, ProgramUnit, List<CompilerError>> {
     override fun transform(input: ParseTree): Result<ProgramUnit, List<CompilerError>> =
         when (val hlir = SlastBuilder.IRBuilder().visit(input)) {
             is ProgramUnit -> Result.ok(hlir)
