@@ -8,15 +8,20 @@ import org.antlr.v4.runtime.CommonTokenStream
 import org.antlr.v4.runtime.ParserRuleContext
 import slang.common.CodeInfo
 import slang.common.CodeInfo.Companion.generic
-import slang.parser.*
 import slang.common.Result
 import slang.common.Transform
 import slang.common.invoke
 import slang.common.then
+import slang.parser.CompilerError
+import slang.parser.File2ParseTreeTransformer
+import slang.parser.ParseTree
+import slang.parser.SlangParserErrorListener
+import slang.parser.String2ParseTreeTransformer
 import java.io.File
 
-
-class SlastBuilder(ctx: SlangParser.CompilationUnitContext) {
+class SlastBuilder(
+    ctx: SlangParser.CompilationUnitContext,
+) {
     val program: ProgramUnit
 
     init {
@@ -25,12 +30,13 @@ class SlastBuilder(ctx: SlangParser.CompilationUnitContext) {
     }
 
     class IRBuilder : SlangBaseVisitor<SlastNode>() {
-
-        private fun createSourceCodeInfo(ctx: ParserRuleContext): CodeInfo {
-            return CodeInfo(
-                ctx.start.line, ctx.stop.line, ctx.start.charPositionInLine, ctx.stop.charPositionInLine
+        private fun createSourceCodeInfo(ctx: ParserRuleContext): CodeInfo =
+            CodeInfo(
+                ctx.start.line,
+                ctx.stop.line,
+                ctx.start.charPositionInLine,
+                ctx.stop.charPositionInLine,
             )
-        }
 
         override fun visitLetExpr(ctx: SlangParser.LetExprContext): SlastNode {
             val expr = Stmt.LetStmt(ctx.ID().text, visit(ctx.expr()) as Expr)
@@ -60,7 +66,6 @@ class SlastBuilder(ctx: SlangParser.CompilationUnitContext) {
             expr.codeInfo = createSourceCodeInfo(ctx)
             return expr
         }
-
 
         override fun visitFunAnonymousPureExpr(ctx: SlangParser.FunAnonymousPureExprContext): SlastNode {
             val params = ctx.paramList()?.ID()?.map { it.text } ?: emptyList()
@@ -141,11 +146,12 @@ class SlastBuilder(ctx: SlangParser.CompilationUnitContext) {
         override fun visitFuncCallExpr(ctx: SlangParser.FuncCallExprContext): SlastNode {
             val args = ctx.argList()?.expr()?.map { visit(it) as Expr } ?: emptyList()
             val target = visit(ctx.expr()) as Expr
-            val expr = if (target is Expr.VarExpr) {
-                Expr.NamedFunctionCall(target.name, args)
-            } else {
-                Expr.ExpressionFunctionCall(target, args)
-            }
+            val expr =
+                if (target is Expr.VarExpr) {
+                    Expr.NamedFunctionCall(target.name, args)
+                } else {
+                    Expr.ExpressionFunctionCall(target, args)
+                }
             expr.codeInfo = createSourceCodeInfo(ctx)
             return expr
         }
@@ -172,9 +178,12 @@ class SlastBuilder(ctx: SlangParser.CompilationUnitContext) {
         }
 
         override fun visitIfExpr(ctx: SlangParser.IfExprContext): SlastNode {
-            val expr = Expr.IfExpr(
-                visit(ctx.expr(0)) as Expr, visit(ctx.expr(1)) as Expr, visit(ctx.expr(2)) as Expr
-            )
+            val expr =
+                Expr.IfExpr(
+                    visit(ctx.expr(0)) as Expr,
+                    visit(ctx.expr(1)) as Expr,
+                    visit(ctx.expr(2)) as Expr,
+                )
             expr.codeInfo = createSourceCodeInfo(ctx)
             return expr
         }
@@ -196,12 +205,13 @@ class SlastBuilder(ctx: SlangParser.CompilationUnitContext) {
         }
 
         override fun visitCompilationUnit(ctx: SlangParser.CompilationUnitContext): SlastNode {
-            val expr = if (ctx.stmt() == null) {
-                ProgramUnit(emptyList())
-            } else {
-                val stmts = ctx.stmt().map { visit(it) as Stmt }
-                ProgramUnit(stmts)
-            }
+            val expr =
+                if (ctx.stmt() == null) {
+                    ProgramUnit(emptyList())
+                } else {
+                    val stmts = ctx.stmt().map { visit(it) as Stmt }
+                    ProgramUnit(stmts)
+                }
             expr.codeInfo = createSourceCodeInfo(ctx)
             return expr
         }
@@ -249,13 +259,14 @@ class SlastBuilder(ctx: SlangParser.CompilationUnitContext) {
         }
 
         override fun visitLhs(ctx: SlangParser.LhsContext): SlastNode {
-            val expr = if (ctx.deref() != null) {
-                Expr.DerefExpr(visit(ctx.deref()) as Expr)
-            } else if (ctx.fieldAccess() != null) {
-                visit(ctx.fieldAccess())
-            } else {
-                Expr.VarExpr(ctx.ID().text)
-            }
+            val expr =
+                if (ctx.deref() != null) {
+                    Expr.DerefExpr(visit(ctx.deref()) as Expr)
+                } else if (ctx.fieldAccess() != null) {
+                    visit(ctx.fieldAccess())
+                } else {
+                    Expr.VarExpr(ctx.ID().text)
+                }
             expr.codeInfo = createSourceCodeInfo(ctx)
             return expr
         }
@@ -337,19 +348,13 @@ class SlastBuilder(ctx: SlangParser.CompilationUnitContext) {
             return expr
         }
 
-        override fun visitBreakStmt(ctx: SlangParser.BreakStmtContext?): SlastNode {
-            return Stmt.Break
-        }
+        override fun visitBreakStmt(ctx: SlangParser.BreakStmtContext?): SlastNode = Stmt.Break
 
-        override fun visitContinueStmt(ctx: SlangParser.ContinueStmtContext?): SlastNode {
-            return Stmt.Continue
-        }
-
+        override fun visitContinueStmt(ctx: SlangParser.ContinueStmtContext?): SlastNode = Stmt.Continue
     }
 }
 
-class ParseTree2HlirTrasnformer() : Transform<ParseTree, ProgramUnit> {
-
+class ParseTree2HlirTrasnformer : Transform<ParseTree, ProgramUnit> {
     override fun transform(input: ParseTree): Result<ProgramUnit, List<CompilerError>> =
         when (val hlir = SlastBuilder.IRBuilder().visit(input)) {
             is ProgramUnit -> Result.ok(hlir)
@@ -357,12 +362,12 @@ class ParseTree2HlirTrasnformer() : Transform<ParseTree, ProgramUnit> {
         }
 }
 
-fun file2hlir(file : File) : Result<ProgramUnit, List<CompilerError>> {
+fun file2hlir(file: File): Result<ProgramUnit, List<CompilerError>> {
     val transformers = File2ParseTreeTransformer() then ParseTree2HlirTrasnformer()
     return transformers.invoke(file)
 }
 
-fun string2hlir(string: String) : Result<ProgramUnit, List<CompilerError>> {
+fun string2hlir(string: String): Result<ProgramUnit, List<CompilerError>> {
     val transformers = String2ParseTreeTransformer() then ParseTree2HlirTrasnformer()
     return transformers.invoke(string)
 }
@@ -385,5 +390,4 @@ fun main() {
     }
 
     print(parseProgram(x))
-
 }

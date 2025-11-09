@@ -4,7 +4,9 @@ import SlangParser
 import org.antlr.v4.runtime.ParserRuleContext
 
 @ParserRule("DisallowedBreakContinue", "Checks for break and continue statements outside of loops")
-class BreakContinueChecker(errorListener: SlangParserErrorListener) : CompilationRule(errorListener) {
+class BreakContinueChecker(
+    errorListener: SlangParserErrorListener,
+) : CompilationRule(errorListener) {
     private val loopContextStack = ArrayDeque<Boolean>()
 
     override fun enterWhileStmt(ctx: SlangParser.WhileStmtContext) {
@@ -37,14 +39,18 @@ class BreakContinueChecker(errorListener: SlangParserErrorListener) : Compilatio
 }
 
 @ParserRule("InvalidOperandsInBinaryOperator", "Checks for invalid operands in binary operators")
-class InvalidOperandsInBinaryOperator(errorListener: SlangParserErrorListener) : CompilationRule(errorListener) {
+class InvalidOperandsInBinaryOperator(
+    errorListener: SlangParserErrorListener,
+) : CompilationRule(errorListener) {
+    private fun isInvalidOperand(ctx: ParserRuleContext): Boolean =
+        ctx is SlangParser.FunAnonymousPureExprContext || ctx is SlangParser.FunAnonymousImpureExprContext ||
+            ctx is SlangParser.ReadInputExprContext
 
-    private fun isInvalidOperand(ctx: ParserRuleContext): Boolean {
-        return ctx is SlangParser.FunAnonymousPureExprContext || ctx is SlangParser.FunAnonymousImpureExprContext
-                || ctx is SlangParser.ReadInputExprContext
-    }
-
-    private fun validateOperands(operand1: ParserRuleContext, operand2: ParserRuleContext, type: String) {
+    private fun validateOperands(
+        operand1: ParserRuleContext,
+        operand2: ParserRuleContext,
+        type: String,
+    ) {
         if (isInvalidOperand(operand1)) {
             logCompilationError(operand1.lineColumn(), "${operand1.text} cannot be used as operand in $type operation")
         }
@@ -73,7 +79,9 @@ class InvalidOperandsInBinaryOperator(errorListener: SlangParserErrorListener) :
 }
 
 @ParserRule("ValidateScope", "Checks for duplicate variables in the same scope")
-class ValidateScope(errorListener: SlangParserErrorListener) : CompilationRule(errorListener) {
+class ValidateScope(
+    errorListener: SlangParserErrorListener,
+) : CompilationRule(errorListener) {
     // structs are defined on the global scope. Nested structs are not supported.
     private val compilationUnitStack = ArrayDeque<SlangParser.CompilationUnitContext>()
     private var variableScopes = ArrayDeque<MutableSet<String>>()
@@ -115,4 +123,3 @@ class ValidateScope(errorListener: SlangParserErrorListener) : CompilationRule(e
         compilationUnitStack.removeLast()
     }
 }
-

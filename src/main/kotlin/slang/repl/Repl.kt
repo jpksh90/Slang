@@ -1,11 +1,11 @@
 package slang.repl
 
-import slang.hlir.ParseTree2HlirTrasnformer
-import slang.parser.String2ParseTreeTransformer
-import slang.runtime.Interpreter
-import slang.runtime.InterpreterState
 import slang.common.invoke
 import slang.common.then
+import slang.hlir.ParseTree2HlirTrasnformer
+import slang.parser.String2ParseTreeTransformer
+import slang.runtime.ConcreteState
+import slang.runtime.Interpreter
 
 const val PROMPT = "> "
 
@@ -14,7 +14,7 @@ class Repl {
 
     fun start() {
         println("Welcome to the Slang REPL!")
-        var state = InterpreterState()
+        var state = ConcreteState()
         while (true) {
             print(PROMPT)
             val input = readlnOrNull() ?: break

@@ -21,9 +21,9 @@ private const val AST_OPT = "ast"
 private const val IR_OPT = "ir"
 
 class SlangCLI : CliktCommand("slangc") {
-
     private val inputFile by argument(help = "Input file")
-    private val stage by option("-o", "--output-format", help = "Run till stage").choice(AST_OPT, RUN_OPT, IR_OPT)
+    private val stage by option("-o", "--output-format", help = "Run till stage")
+        .choice(AST_OPT, RUN_OPT, IR_OPT)
         .default(RUN_OPT)
     private val verbose by option("-v", "--verbose", help = "Enable verbose output").flag()
 
@@ -31,21 +31,23 @@ class SlangCLI : CliktCommand("slangc") {
         versionOption("1.0")
     }
 
-    private fun dumpAst(tree: SlangParser.CompilationUnitContext) : String {
-        val dumperOptions = DumperOptions().apply {
-            defaultFlowStyle = DumperOptions.FlowStyle.BLOCK
-            isPrettyFlow = true
-        }
+    private fun dumpAst(tree: SlangParser.CompilationUnitContext): String {
+        val dumperOptions =
+            DumperOptions().apply {
+                defaultFlowStyle = DumperOptions.FlowStyle.BLOCK
+                isPrettyFlow = true
+            }
         val yaml = Yaml(dumperOptions)
         val yamlString = yaml.dumpAs(tree, Tag.MAP, DumperOptions.FlowStyle.BLOCK)
         return yamlString
     }
 
-    private fun dumpIR(unit: SlastNode) : String {
-        val dumperOptions = DumperOptions().apply {
-            defaultFlowStyle = DumperOptions.FlowStyle.BLOCK
-            isPrettyFlow = true
-        }
+    private fun dumpIR(unit: SlastNode): String {
+        val dumperOptions =
+            DumperOptions().apply {
+                defaultFlowStyle = DumperOptions.FlowStyle.BLOCK
+                isPrettyFlow = true
+            }
         val yaml = Yaml(dumperOptions)
         val yamlString = yaml.dumpAs(unit, Tag.MAP, DumperOptions.FlowStyle.BLOCK)
         return yamlString

@@ -11,18 +11,22 @@ import slang.common.Result
 import slang.common.Transform
 import java.io.File
 
-fun ParserRuleContext.lineColumn() = CodeInfo(this.start.line,  this.stop.line, this.start.charPositionInLine,
-    this.stop.charPositionInLine)
+fun ParserRuleContext.lineColumn() =
+    CodeInfo(
+        this.start.line,
+        this.stop.line,
+        this.start.charPositionInLine,
+        this.stop.charPositionInLine,
+    )
 
 typealias ParseErrors = List<CompilerError>
 typealias ParseTree = SlangParser.CompilationUnitContext
 
 open class Parser {
-
     private val errorListener = SlangParserErrorListener()
     private val ruleManager = CompilationRuleManager()
 
-    fun parse(input: CharStream) : Result<ParseTree, ParseErrors> {
+    fun parse(input: CharStream): Result<ParseTree, ParseErrors> {
         val lexer = SlangLexer(input)
         val parser = SlangParser(CommonTokenStream(lexer))
         parser.addErrorListener(errorListener)
@@ -39,17 +43,9 @@ open class Parser {
 }
 
 class String2ParseTreeTransformer : Transform<String, ParseTree> {
-    override fun transform(input: String): Result<ParseTree, ParseErrors> {
-        return Parser().parse(ANTLRInputStream(input))
-    }
+    override fun transform(input: String): Result<ParseTree, ParseErrors> = Parser().parse(ANTLRInputStream(input))
 }
 
 class File2ParseTreeTransformer : Transform<File, ParseTree> {
-    override fun transform(input: File): Result<ParseTree, ParseErrors> {
-        return Parser().parse(ANTLRInputStream(input.inputStream()))
-    }
+    override fun transform(input: File): Result<ParseTree, ParseErrors> = Parser().parse(ANTLRInputStream(input.inputStream()))
 }
-
-
-
-

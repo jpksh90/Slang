@@ -2,6 +2,7 @@ plugins {
     kotlin("jvm") version "2.1.0"
     antlr
     application
+    id("org.jlleitschuh.gradle.ktlint") version "12.1.0"
 }
 
 group = "org.example"
@@ -10,7 +11,6 @@ version = "1.0-SNAPSHOT"
 repositories {
     mavenCentral()
 }
-
 
 dependencies {
     testImplementation(kotlin("test"))
@@ -24,7 +24,6 @@ dependencies {
     implementation("ch.qos.logback:logback-classic:1.5.0")
     implementation("org.yaml:snakeyaml:2.0")
     implementation("org.reflections:reflections:0.10.2")
-
 }
 
 tasks.test {
@@ -44,11 +43,9 @@ tasks.named("compileTestKotlin") {
     dependsOn("generateTestGrammarSource")
 }
 
-
 kotlin {
     jvmToolchain(21)
 }
-
 
 tasks.register("showGui", JavaExec::class) {
     group = "application"
@@ -78,4 +75,23 @@ tasks.register<Exec>("approveSnapshots") {
 
     // Stream output to console so user sees what will happen.
     isIgnoreExitValue = false
+}
+
+ktlint {
+    version.set("1.7.1")
+    android.set(false) // use official Kotlin style
+    outputToConsole.set(true)
+    ignoreFailures.set(false)
+    reporters {
+        reporter(org.jlleitschuh.gradle.ktlint.reporter.ReporterType.PLAIN)
+        reporter(org.jlleitschuh.gradle.ktlint.reporter.ReporterType.CHECKSTYLE)
+    }
+}
+
+tasks.named("runKtlintCheckOverMainSourceSet") {
+    mustRunAfter(tasks.named("compileKotlin"))
+}
+
+tasks.named("runKtlintFormatOverMainSourceSet") {
+    mustRunAfter(tasks.named("compileKotlin"))
 }

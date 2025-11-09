@@ -3,11 +3,11 @@ package slang.parser
 import org.antlr.v4.runtime.BaseErrorListener
 import slang.common.CodeInfo
 
-
-data class CompilerError(val lineCol: CodeInfo, val message: String) {
-    override fun toString(): String {
-        return "$lineCol - $message"
-    }
+data class CompilerError(
+    val lineCol: CodeInfo,
+    val message: String,
+) {
+    override fun toString(): String = "$lineCol - $message"
 }
 
 class SlangParserErrorListener : BaseErrorListener() {
@@ -29,7 +29,5 @@ class SlangParserErrorListener : BaseErrorListener() {
         errors.add(error)
     }
 
-    fun getErrorsSorted() : List<CompilerError> {
-        return errors.sortedBy { it.lineCol }
-    }
+    fun getErrorsSorted(): List<CompilerError> = errors.sortedBy { it.lineCol }
 }

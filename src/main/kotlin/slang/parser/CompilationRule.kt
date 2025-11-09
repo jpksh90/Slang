@@ -16,14 +16,20 @@ import slang.common.CodeInfo
  */
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class ParserRule(val name: String, val description: String, val enabled: Boolean = true)
+annotation class ParserRule(
+    val name: String,
+    val description: String,
+    val enabled: Boolean = true,
+)
 
 /**
  * Base class for compilation rules.
  *
  * @property errorListener The error listener to log compilation errors.
  */
-abstract class CompilationRule(private val errorListener: SlangParserErrorListener) : SlangBaseListener() {
+abstract class CompilationRule(
+    private val errorListener: SlangParserErrorListener,
+) : SlangBaseListener() {
     private var result: Boolean = true
 
     /**
@@ -53,11 +59,13 @@ abstract class CompilationRule(private val errorListener: SlangParserErrorListen
      * @param codeInfo The line/column where the error occurred.
      * @param message The error message.
      */
-    fun logCompilationError(codeInfo: CodeInfo, message: String) {
+    fun logCompilationError(
+        codeInfo: CodeInfo,
+        message: String,
+    ) {
         logCompilationError(CompilerError(codeInfo, message))
     }
 }
-
 
 /**
  * Manages the compilation rules.
@@ -66,7 +74,6 @@ class CompilationRuleManager {
     private val rules = mutableListOf<CompilationRule>()
 
     private val logger = LoggerFactory.getLogger(CompilationRuleManager::class.java)
-
 
     /**
      * Adds a compilation rule to the manager.
@@ -87,7 +94,10 @@ class CompilationRuleManager {
      * @param packageName package to scan (e.g. "slang.parser")
      * @param errorListener listener instance to pass to rule constructors
      */
-    fun discoverCompilationRules(packageName: String, errorListener: SlangParserErrorListener) {
+    fun discoverCompilationRules(
+        packageName: String,
+        errorListener: SlangParserErrorListener,
+    ) {
         try {
             val reflections = Reflections(packageName)
 
@@ -153,8 +163,9 @@ class CompilationRuleManager {
      * @return True if all rules pass, false otherwise.
      */
     fun applyRules(ctx: ParserRuleContext): Boolean =
-         rules.fold(true) { acc, rule ->
-            rule::class.java.getAnnotation(ParserRule::class.java)
+        rules.fold(true) { acc, rule ->
+            rule::class.java
+                .getAnnotation(ParserRule::class.java)
                 ?.takeIf { it.enabled }
                 ?.let { acc && rule.apply(ctx) } ?: acc
         }
