@@ -1,6 +1,5 @@
 package slang.repl
 
-
 enum class Type {
     NUMBER,
     STRING,
@@ -8,13 +7,13 @@ enum class Type {
     NONE,
     USER_DEFINED,
     FUNCTION,
-    ANY
+    ANY,
 }
 
 data class MemoryCell(
     val name: String,
     val type: Type,
-    val value: Any?
+    val value: Any?,
 )
 
 object Memory {

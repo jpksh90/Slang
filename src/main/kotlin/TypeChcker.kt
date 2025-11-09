@@ -2,26 +2,20 @@ import org.antlr.v4.runtime.ANTLRInputStream
 import org.antlr.v4.runtime.CommonTokenStream
 
 enum class Type {
-    INT, BOOL, UNKNOWN, UNIT
+    INT,
+    BOOL,
+    UNKNOWN,
+    UNIT,
 }
 
-
 class StrictTypeChecker : SlangBaseVisitor<Type>() {
-
     private val symbolTable = mutableMapOf<String, Type>()
 
+    override fun visitIntExpr(ctx: SlangParser.IntExprContext): Type = Type.INT
 
-    override fun visitIntExpr(ctx: SlangParser.IntExprContext): Type {
-        return Type.INT
-    }
+    override fun visitBoolExpr(ctx: SlangParser.BoolExprContext): Type = Type.BOOL
 
-    override fun visitBoolExpr(ctx: SlangParser.BoolExprContext): Type {
-        return Type.BOOL
-    }
-
-    override fun visitVarExpr(ctx: SlangParser.VarExprContext): Type {
-        return Type.UNKNOWN
-    }
+    override fun visitVarExpr(ctx: SlangParser.VarExprContext): Type = Type.UNKNOWN
 
     override fun visitArithmeticExpr(ctx: SlangParser.ArithmeticExprContext): Type {
         val leftType = visit(ctx.expr(0))
@@ -29,9 +23,11 @@ class StrictTypeChecker : SlangBaseVisitor<Type>() {
 
         val allowedTypes = listOf(Type.INT, Type.UNKNOWN)
 
-        if ( !allowedTypes.contains(leftType) || !allowedTypes.contains(rightType) ) {
-            throw IllegalArgumentException("Error: Cannot add any data type to integer in '${ctx.text}' at [${ctx
-                .start.line}:${ctx.start.startIndex}] -- [${ctx.stop.line}:${ctx.stop.startIndex}]")
+        if (!allowedTypes.contains(leftType) || !allowedTypes.contains(rightType)) {
+            throw IllegalArgumentException(
+                "Error: Cannot add any data type to integer in '${ctx.text}' at [${ctx
+                    .start.line}:${ctx.start.startIndex}] -- [${ctx.stop.line}:${ctx.stop.startIndex}]",
+            )
         }
         return Type.INT
     }
@@ -47,28 +43,27 @@ class StrictTypeChecker : SlangBaseVisitor<Type>() {
         return Type.UNIT
     }
 
-    override fun visitReadInputExpr(ctx: SlangParser.ReadInputExprContext?): Type {
-        return Type.UNKNOWN
-    }
+    override fun visitReadInputExpr(ctx: SlangParser.ReadInputExprContext?): Type = Type.UNKNOWN
 }
 
 fun main() {
-   val program = """
-       fun power(base, exp) {
-           let result = 1;
+    val program =
+        """
+        fun power(base, exp) {
+            let result = 1;
 
-           while exp > 0 {
-               result = result * base;
-               exp = exp - 1;
-           }
-           return result;
-       }
+            while exp > 0 {
+                result = result * base;
+                exp = exp - 1;
+            }
+            return result;
+        }
 
-       let b = readInput();
-       let e = readInput();
-       print(power(b,e));
-       let p = true + 1;
-   """.trimIndent()
+        let b = readInput();
+        let e = readInput();
+        print(power(b,e));
+        let p = true + 1;
+        """.trimIndent()
 
     val inputStream = ANTLRInputStream(program)
     val lexer = SlangLexer(inputStream)

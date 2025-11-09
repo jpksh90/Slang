@@ -1,21 +1,19 @@
 import org.approvaltests.Approvals
-import slang.hlir.ParseTree2HlirTrasnformer
-import slang.parser.File2ParseTreeTransformer
 import slang.common.invoke
 import slang.common.then
+import slang.hlir.ParseTree2HlirTrasnformer
+import slang.parser.File2ParseTreeTransformer
 import java.io.File
 import java.net.URL
 import kotlin.test.Test
 
 class IRBuilderTests {
-
-    fun loadTestProgram(name: String): URL? {
-        return IRBuilderTests::class.java.getResource("/$name")
-    }
+    fun loadTestProgram(name: String): URL? = IRBuilderTests::class.java.getResource("/$name")
 
     fun buildAst(testCase: URL): String {
-        val hlir = (File2ParseTreeTransformer() then ParseTree2HlirTrasnformer())
-            .invoke(File(testCase.toURI()))
+        val hlir =
+            (File2ParseTreeTransformer() then ParseTree2HlirTrasnformer())
+                .invoke(File(testCase.toURI()))
         return hlir.toString()
     }
 

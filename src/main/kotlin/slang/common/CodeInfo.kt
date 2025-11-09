@@ -4,27 +4,26 @@ data class CodeInfo(
     val lineStart: Int,
     val lineEnd: Int,
     val columnStart: Int,
-    val columnEnd: Int
+    val columnEnd: Int,
 ) : Comparable<CodeInfo> {
-    override fun compareTo(other: CodeInfo): Int {
-        return compareValuesBy(this, other,
+    override fun compareTo(other: CodeInfo): Int =
+        compareValuesBy(
+            this,
+            other,
             { it.lineStart },
             { it.columnStart },
             { it.lineEnd },
-            { it.columnEnd }
+            { it.columnEnd },
         )
-    }
 
     companion object {
         val generic = CodeInfo(-1, -1, -1, -1)
     }
 
-    override fun toString(): String {
-        return if (this == generic) {
+    override fun toString(): String =
+        if (this == generic) {
             "@"
         } else {
             "[$lineStart:$columnStart --  $lineEnd:$columnEnd]"
         }
-    }
 }
-
