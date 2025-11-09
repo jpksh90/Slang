@@ -16,6 +16,7 @@ dependencies {
     testImplementation(kotlin("test"))
     antlr("org.antlr:antlr4:4.5")
     implementation("com.fifesoft:rsyntaxtextarea:3.3.3")
+    implementation("io.arrow-kt:arrow-core:2.2.0")
     implementation("com.formdev:flatlaf:3.5.4")
     testImplementation("com.approvaltests:approvaltests:23.0.0")
     implementation("com.github.ajalt.clikt:clikt:5.0.3")
