@@ -132,7 +132,8 @@ class WorklistSolver : SolverStrategy {
 /**
  * Abstract interface for dataflow analysis
  *
- * @param T the type of the dataflow facts, must implement Lattice
+ * @param T the type of the dataflow facts for the analysis
+ * The lattice operations are provided by the abstract methods of this class.
  */
 abstract class DataflowAnalysis<T> {
     /**
