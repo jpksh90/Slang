@@ -1,5 +1,7 @@
 # Slang
 
+[![Build and Test](https://github.com/jpksh90/Slang/actions/workflows/build.yml/badge.svg)](https://github.com/jpksh90/Slang/actions/workflows/build.yml)
+
 Slang is a small educational programming language implemented in Java/Kotlin with ANTLR for parsing. This README explains how to get the codebase running locally and how to start contributing.
 
 ## Quick start
