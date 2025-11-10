@@ -1,1 +1,17 @@
-Ok(value=ProgramUnit(stmt=[LetStmt(name=a, expr=NumberLiteral(value=1.0)), BlockStmt(stmts=[BlockStmt(stmts=[PrintStmt(args=[VarExpr(name=a)]), AssignStmt(lhs=VarExpr(name=a), expr=BinaryExpr(left=VarExpr(name=a), op=+, right=NumberLiteral(value=1.0)))]), WhileStmt(condition=BinaryExpr(left=VarExpr(name=a), op=<, right=NumberLiteral(value=5.0)), body=BlockStmt(stmts=[PrintStmt(args=[VarExpr(name=a)]), AssignStmt(lhs=VarExpr(name=a), expr=BinaryExpr(left=VarExpr(name=a), op=+, right=NumberLiteral(value=1.0)))]))])]))
+ fun __module__main__() {
+  {
+     let a = 1.0;
+    {
+      {
+         print(a);
+        a = a + 1.0;
+      }
+       while (a < 5.0) {
+        {
+           print(a);
+          a = a + 1.0;
+        }
+      }
+    }
+  }
+}

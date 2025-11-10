@@ -2,6 +2,7 @@ import org.approvaltests.Approvals
 import slang.common.invoke
 import slang.common.then
 import slang.hlir.ParseTree2HlirTrasnformer
+import slang.hlir.prettyPrint
 import slang.parser.File2ParseTreeTransformer
 import java.io.File
 import java.net.URL
@@ -12,7 +13,10 @@ class IRBuilderTests {
 
     fun buildAst(testCase: URL): String {
         val hlir = (File2ParseTreeTransformer() then ParseTree2HlirTrasnformer()).invoke(File(testCase.toURI()))
-        return hlir.toString()
+        return hlir.fold(
+            {it.prettyPrint(0)},
+            {""}
+        )
     }
 
     @Test

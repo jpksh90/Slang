@@ -276,10 +276,11 @@ class DataflowAnalysisTest {
         assertTrue(result is Result.Ok)
         val programUnit = (result as Result.Ok).value
 
-        val function = programUnit.stmt.filterIsInstance<Stmt.Function>().firstOrNull()
+        // pick the first user-defined top-level function (skip synthetic module main)
+        val function = programUnit.stmt.flatMap { it.functions }.firstOrNull { it.name != "__module__main__" }
         assertNotNull(function)
 
-        val cfg = function.buildCFG()
+        val cfg = function!!.buildCFG()
 
         val lvAnalysis = LiveVariablesAnalysis()
         val lvResult = lvAnalysis.analyze(cfg)
