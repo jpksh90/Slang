@@ -105,13 +105,11 @@ class ReplCommand : CliktCommand(name = "repl") {
 }
 
 fun main(args: Array<String>) {
-    // Check if the first argument is "repl" to invoke the REPL subcommand
-    if (args.isNotEmpty() && args[0] == "repl") {
+    if (args.isEmpty() || args[0] == "repl") {
         SlangCLI()
             .subcommands(ReplCommand())
             .main(args)
     } else {
-        // For file execution, parse as main command without subcommands
         SlangCLI().main(args)
     }
 }
