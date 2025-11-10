@@ -36,18 +36,23 @@ Slang is a small educational programming language implemented in Java/Kotlin wit
 
 - Run the REPL:
 ```bash
-./gradlew run --console=plain --quiet
+./slang repl
+# Or using Gradle:
+./gradlew run --console=plain --quiet --args="repl"
 ```
-- Use the provided script to interpret a file:
+- Run a Slang program:
   ```bash
-  ./slangc <input-file>
+  ./slang <input-file>
   # Example:
-  ./slangc src/test/resources/facl.slang
-```
-- `slangc` supports output modes via `-o`:
-  - Run mode (default): `./slangc src/test/resources/sum_prod.slang`
-  - AST mode: `./slangc -o ast src/test/resources/sum_prod.slang`
-  - IR mode: `./slangc -o ir src/test/resources/sum_prod.slang`
+  ./slang src/test/resources/sum_prod.slang
+  ```
+- Output HLIR representation:
+  ```bash
+  # To stdout:
+  ./slang --hlir src/test/resources/sum_prod.slang
+  # To file:
+  ./slang --hlir src/test/resources/sum_prod.slang -o output.yaml
+  ```
 
 - Clean build artifacts:
 ```bash
