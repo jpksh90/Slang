@@ -55,3 +55,6 @@ node_modules/
 # misc
 Thumbs.db
 
+# Kotlin compiler sessions
+.kotlin/
+

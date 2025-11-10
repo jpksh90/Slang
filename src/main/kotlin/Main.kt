@@ -1,66 +1,117 @@
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.main
+import com.github.ajalt.clikt.core.subcommands
 import com.github.ajalt.clikt.parameters.arguments.argument
-import com.github.ajalt.clikt.parameters.options.default
+import com.github.ajalt.clikt.parameters.arguments.optional
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.versionOption
-import com.github.ajalt.clikt.parameters.types.choice
-import org.slf4j.LoggerFactory
 import org.yaml.snakeyaml.DumperOptions
 import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.nodes.Tag
-import slang.hlir.SlastNode
+import slang.common.invoke
+import slang.common.then
+import slang.hlir.ParseTree2HlirTrasnformer
+import slang.hlir.ProgramUnit
 import slang.parser.File2ParseTreeTransformer
+import slang.repl.Repl
+import slang.runtime.ConcreteState
+import slang.runtime.Interpreter
+import java.io.File
 import java.nio.file.Paths
 
-private const val RUN_OPT = "run"
-
-private const val AST_OPT = "ast"
-
-private const val IR_OPT = "ir"
-
-class SlangCLI : CliktCommand("slangc") {
-    private val inputFile by argument(help = "Input file")
-    private val stage by option("-o", "--output-format", help = "Run till stage")
-        .choice(AST_OPT, RUN_OPT, IR_OPT)
-        .default(RUN_OPT)
-    private val verbose by option("-v", "--verbose", help = "Enable verbose output").flag()
+class SlangCLI : CliktCommand(name = "slang") {
+    private val filename by argument(help = "Slang source file to execute").optional()
+    private val hlir by option("--hlir", help = "Output HLIR representation instead of running").flag()
+    private val output by option("-o", help = "Output file for HLIR (default: stdout)")
 
     init {
         versionOption("1.0")
     }
 
-    private fun dumpAst(tree: SlangParser.CompilationUnitContext): String {
-        val dumperOptions =
-            DumperOptions().apply {
-                defaultFlowStyle = DumperOptions.FlowStyle.BLOCK
-                isPrettyFlow = true
-            }
-        val yaml = Yaml(dumperOptions)
-        val yamlString = yaml.dumpAs(tree, Tag.MAP, DumperOptions.FlowStyle.BLOCK)
-        return yamlString
-    }
-
-    private fun dumpIR(unit: SlastNode): String {
-        val dumperOptions =
-            DumperOptions().apply {
-                defaultFlowStyle = DumperOptions.FlowStyle.BLOCK
-                isPrettyFlow = true
-            }
-        val yaml = Yaml(dumperOptions)
-        val yamlString = yaml.dumpAs(unit, Tag.MAP, DumperOptions.FlowStyle.BLOCK)
-        return yamlString
-    }
-
     override fun run() {
-        if (verbose) {
-            println("Input file: $inputFile")
-            println("Output format: $stage")
+        // If a subcommand was invoked, don't execute file logic
+        if (currentContext.invokedSubcommand != null) {
+            return
         }
-        val file = Paths.get(inputFile).toAbsolutePath()
-        val parseTree = File2ParseTreeTransformer().transform(file.toFile())
+
+        if (filename == null) {
+            echo("Usage: slang <filename> or slang repl", err = true)
+            echo("Run 'slang --help' for more information", err = true)
+            return
+        }
+
+        val file = Paths.get(filename!!).toAbsolutePath().toFile()
+        if (!file.exists()) {
+            echo("Error: File not found: $filename", err = true)
+            return
+        }
+
+        val transformers = File2ParseTreeTransformer() then ParseTree2HlirTrasnformer()
+        val result = transformers.invoke(file)
+
+        result.fold(
+            onSuccess = { programUnit ->
+                if (hlir) {
+                    outputHlir(programUnit)
+                } else {
+                    runProgram(programUnit)
+                }
+            },
+            onFailure = { errors ->
+                echo("Parse errors:", err = true)
+                errors.forEach { error ->
+                    echo("  $error", err = true)
+                }
+            },
+        )
+    }
+
+    private fun outputHlir(programUnit: ProgramUnit) {
+        val dumperOptions =
+            DumperOptions().apply {
+                defaultFlowStyle = DumperOptions.FlowStyle.BLOCK
+                isPrettyFlow = true
+            }
+        val yaml = Yaml(dumperOptions)
+        val yamlString = yaml.dumpAs(programUnit, Tag.MAP, DumperOptions.FlowStyle.BLOCK)
+
+        if (output != null) {
+            File(output!!).writeText(yamlString)
+            echo("HLIR written to: $output")
+        } else {
+            echo(yamlString)
+        }
+    }
+
+    private fun runProgram(programUnit: ProgramUnit) {
+        try {
+            val interpreter = Interpreter()
+            interpreter.interpret(programUnit, ConcreteState())
+        } catch (e: Exception) {
+            echo("Runtime error: ${e.message}", err = true)
+            if (e !is RuntimeException) {
+                e.printStackTrace()
+            }
+        }
     }
 }
 
-fun main(args: Array<String>) = SlangCLI().main(args)
+class ReplCommand : CliktCommand(name = "repl") {
+    override fun run() {
+        val repl = Repl()
+        repl.start()
+    }
+}
+
+fun main(args: Array<String>) {
+    // Check if the first argument is "repl" to invoke the REPL subcommand
+    if (args.isNotEmpty() && args[0] == "repl") {
+        SlangCLI()
+            .subcommands(ReplCommand())
+            .main(args)
+    } else {
+        // For file execution, parse as main command without subcommands
+        SlangCLI().main(args)
+    }
+}
