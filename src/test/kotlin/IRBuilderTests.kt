@@ -14,8 +14,8 @@ class IRBuilderTests {
     fun buildAst(testCase: URL): String {
         val hlir = (File2ParseTreeTransformer() then ParseTree2HlirTrasnformer()).invoke(File(testCase.toURI()))
         return hlir.fold(
-            {it.prettyPrint(0)},
-            {""}
+            { it.prettyPrint(0) },
+            { "" },
         )
     }
 

@@ -98,8 +98,8 @@ class ControlFlowGraphTest {
         assertTrue(result is Result.Ok)
         val programUnit = (result as Result.Ok).value
 
-        // Get the function
-        val function = programUnit.stmt.filterIsInstance<Stmt.Function>().firstOrNull()
+        // Get the user-defined function (skip synthetic module main)
+        val function = programUnit.stmt.flatMap { it.functions }.firstOrNull { it.name != "__module__main__" }
         assertNotNull(function)
 
         val cfg = function.buildCFG()

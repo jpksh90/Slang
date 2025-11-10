@@ -65,7 +65,10 @@ data class ProgramUnit(
     val stmt: List<SlangModule>,
 ) : SlastNode()
 
-data class SlangModule(val functions : List<Stmt.Function>, val inlinedFuncs  : List<Expr.InlinedFunction>) : SlastNode()
+data class SlangModule(
+    val functions: List<Stmt.Function>,
+    val inlinedFuncs: List<Expr.InlinedFunction>,
+) : SlastNode()
 
 sealed class Stmt : SlastNode() {
     data class LetStmt(
@@ -227,23 +230,29 @@ fun SlastNode.prettyPrint(tabStop: Int = 0): String {
         is Stmt.Function -> "$indent fun $name(${params.joinToString(", ")}) {\n" + body.prettyPrint(tabStop + 1) + "\n$indent}"
         is Expr.NoneValue -> "None"
         is Expr.InlinedFunction -> "$indent inline_fun (${params.joinToString(", ")}) => ${body.prettyPrint()}"
-        is Stmt.IfStmt -> "$indent if (${condition.prettyPrint()}) {\n" + thenBody.prettyPrint(tabStop + 1) + "\n$indent} else {\n" + elseBody.prettyPrint(
-            tabStop + 1,
-        ) + "\n$indent}"
+        is Stmt.IfStmt ->
+            "$indent if (${condition.prettyPrint()}) {\n" + thenBody.prettyPrint(tabStop + 1) + "\n$indent} else {\n" +
+                elseBody.prettyPrint(
+                    tabStop + 1,
+                ) + "\n$indent}"
 
         is Stmt.LetStmt -> "$indent let $name = ${expr.prettyPrint()};"
         is Stmt.PrintStmt -> "$indent print(${args.joinToString(", ") { it.prettyPrint() }});"
         is Stmt.ReturnStmt -> "$indent return ${expr.prettyPrint()};"
         is Stmt.WhileStmt -> "$indent while (${condition.prettyPrint()}) {\n" + body.prettyPrint(tabStop + 1) + "\n$indent}"
-        is Expr.Record -> "$indent{\n" + expression.joinToString("\n") { "$indent  ${it.first} : ${it.second.prettyPrint()}" } + "\n$indent}"
+        is Expr.Record ->
+            "$indent{\n" + expression.joinToString("\n") { "$indent  ${it.first} : ${it.second.prettyPrint()}" } +
+                "\n$indent}"
         is Expr.StringLiteral -> "\"$value\""
         is Expr.DerefExpr -> "deref(${expr.prettyPrint()})"
         is Expr.RefExpr -> "ref(${expr.prettyPrint()})"
         is Stmt.DerefStmt -> "$indent deref(${lhs.prettyPrint()}) = ${rhs.prettyPrint()};"
         is Expr.FieldAccess -> "${lhs.prettyPrint()}.${rhs.prettyPrint()}"
-        is Stmt.StructStmt -> "$indent struct $id {\n" + functions.joinToString("\n") { it.prettyPrint(tabStop + 1) } + "\n$indent}" + fields.entries.joinToString(
-            "\n",
-        ) { "$indent ${it.key} : ${it.value.prettyPrint()}" }
+        is Stmt.StructStmt ->
+            "$indent struct $id {\n" + functions.joinToString("\n") { it.prettyPrint(tabStop + 1) } + "\n$indent}" +
+                fields.entries.joinToString(
+                    "\n",
+                ) { "$indent ${it.key} : ${it.value.prettyPrint()}" }
 
         is Expr.ArrayAccess -> "${array.prettyPrint()}[${index.prettyPrint()}]"
         is Expr.ArrayInit -> "$indent [${elements.joinToString(", ") { it.prettyPrint() }}]"
@@ -258,7 +267,8 @@ fun SlastNode.prettyPrint(tabStop: Int = 0): String {
 }
 
 fun main() {
-    val inputCode = """
+    val inputCode =
+        """
         fun power(base, exp) {
             if (base > exp) {
                 base = base + 1;
