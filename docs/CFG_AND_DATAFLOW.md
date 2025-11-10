@@ -154,7 +154,7 @@ class ConstantPropagationAnalysis : DataflowAnalysis<Map<String, Int?>>() {
     override fun initialValue() = emptyMap<String, Int?>()
     override fun boundaryValue() = emptyMap<String, Int?>()
     
-    override fun meet(values: List<Map<String, Int?>>, block: BasicBlock): Map<String, Int?> {
+    override fun meet(values: List<Map<String, Int?>>): Map<String, Int?> {
         if (values.isEmpty()) return emptyMap()
         
         // Intersection: variable is constant only if same in all paths
