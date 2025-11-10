@@ -125,7 +125,7 @@ class MyCustomAnalysis : DataflowAnalysis<MyFactType>() {
     override fun boundaryValue(): MyFactType = ...
     
     // Meet operator to merge facts from predecessors/successors
-    override fun meet(values: List<MyFactType>, block: BasicBlock): MyFactType {
+    override fun meet(values: List<MyFactType>): MyFactType {
         // Combine dataflow facts (e.g., union, intersection)
         return ...
     }
