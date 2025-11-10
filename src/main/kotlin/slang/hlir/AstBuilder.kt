@@ -354,20 +354,20 @@ class SlastBuilder(
     }
 }
 
-class ParseTree2HlirTrasnformer : Transform<ParseTree, ProgramUnit, List<CompilerError>> {
-    override fun transform(input: ParseTree): Result<ProgramUnit, List<CompilerError>> =
+class ParseTree2HlirTrasnformer : Transform<ParseTree, ProgramUnit> {
+    override fun transform(input: ParseTree): Result<ProgramUnit, List<*>> =
         when (val hlir = SlastBuilder.IRBuilder().visit(input)) {
             is ProgramUnit -> Result.ok(hlir)
             else -> Result.err(listOf(CompilerError(generic, "Errors encountered while parsing $input")))
         }
 }
 
-fun file2hlir(file: File): Result<ProgramUnit, List<CompilerError>> {
+fun file2hlir(file: File): Result<ProgramUnit, List<*>> {
     val transformers = File2ParseTreeTransformer() then ParseTree2HlirTrasnformer()
     return transformers.invoke(file)
 }
 
-fun string2hlir(string: String): Result<ProgramUnit, List<CompilerError>> {
+fun string2hlir(string: String): Result<ProgramUnit, List<*>> {
     val transformers = String2ParseTreeTransformer() then ParseTree2HlirTrasnformer()
     return transformers.invoke(string)
 }

@@ -201,10 +201,7 @@ class DataflowAnalysisTest {
 
             override fun boundaryValue(): Map<String, Boolean> = emptyMap()
 
-            override fun meet(
-                values: List<Map<String, Boolean>>,
-                block: BasicBlock,
-            ): Map<String, Boolean> {
+            override fun meet(values: List<Map<String, Boolean>>): Map<String, Boolean> {
                 if (values.isEmpty()) return emptyMap()
                 // Intersection of all maps
                 val result = values[0].toMutableMap()

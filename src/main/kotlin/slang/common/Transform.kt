@@ -1,13 +1,13 @@
 package slang.common
 
-interface Transform<I, O, E> {
-    fun transform(input: I): Result<O, E>
+interface Transform<I, O> {
+    fun transform(input: I): Result<O, List<*>>
 }
 
-infix fun <I, O1, O2, E> Transform<I, O1, E>.then(other: Transform<O1, O2, E>): Transform<I, O2, E> {
+infix fun <I, O1, O2> Transform<I, O1>.then(other: Transform<O1, O2>): Transform<I, O2> {
     val first = this
-    return object : Transform<I, O2, E> {
-        override fun transform(input: I): Result<O2, E> {
+    return object : Transform<I, O2> {
+        override fun transform(input: I): Result<O2, List<*>> {
             val result = first.transform(input)
             return when (result) {
                 is Result.Ok -> other.transform(result.value)
@@ -17,4 +17,4 @@ infix fun <I, O1, O2, E> Transform<I, O1, E>.then(other: Transform<O1, O2, E>): 
     }
 }
 
-operator fun <I, O, E> Transform<I, O, E>.invoke(input: I): Result<O, E> = transform(input)
+operator fun <I, O> Transform<I, O>.invoke(input: I): Result<O, List<*>> = transform(input)

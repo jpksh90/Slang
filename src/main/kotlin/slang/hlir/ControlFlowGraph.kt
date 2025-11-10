@@ -6,8 +6,8 @@ package slang.hlir
 data class BasicBlock(
     val id: Int,
     val stmts: List<Stmt>,
-    val successors: MutableList<BasicBlock> = mutableListOf(),
-    val predecessors: MutableList<BasicBlock> = mutableListOf(),
+    val successors: MutableSet<BasicBlock> = mutableSetOf(),
+    val predecessors: MutableSet<BasicBlock> = mutableSetOf(),
 ) {
     override fun toString(): String = "BB$id"
 

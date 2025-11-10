@@ -9,10 +9,130 @@ enum class Direction {
 }
 
 /**
+ * Interface representing a lattice for dataflow analysis
+ * A lattice defines the structure of dataflow facts
+ */
+interface Lattice<T> {
+    /**
+     * The top element of the lattice (initial/boundary value)
+     */
+    fun top(): T
+
+    /**
+     * The bottom element of the lattice (entry/exit value for analysis)
+     */
+    fun bottom(): T
+
+    /**
+     * Meet operator to merge dataflow facts
+     * For must-analyses: intersection
+     * For may-analyses: union
+     */
+    fun meet(values: List<T>): T
+}
+
+/**
+ * Interface for dataflow solver strategies
+ * Allows different solving algorithms (worklist, chaotic iteration, etc.)
+ */
+interface SolverStrategy {
+    /**
+     * Solve the dataflow equations for the given CFG
+     *
+     * @param cfg the control flow graph to analyze
+     * @param analysis the dataflow analysis to run
+     * @return a map from basic blocks to their IN and OUT dataflow facts
+     */
+    fun <T> solve(
+        cfg: ControlFlowGraph,
+        analysis: DataflowAnalysis<T>,
+    ): DataflowResult<T>
+}
+
+/**
+ * Worklist-based solver strategy
+ * Uses a worklist algorithm for efficient fixed-point computation
+ */
+class WorklistSolver : SolverStrategy {
+    override fun <T> solve(
+        cfg: ControlFlowGraph,
+        analysis: DataflowAnalysis<T>,
+    ): DataflowResult<T> {
+        val inFacts = mutableMapOf<BasicBlock, T>()
+        val outFacts = mutableMapOf<BasicBlock, T>()
+
+        // Initialize all blocks
+        for (block in cfg.getAllBlocks()) {
+            inFacts[block] = analysis.boundaryValue()
+            outFacts[block] = analysis.boundaryValue()
+        }
+
+        // Set boundary condition
+        when (analysis.direction) {
+            Direction.FORWARD -> {
+                inFacts[cfg.entry] = analysis.initialValue()
+            }
+            Direction.BACKWARD -> {
+                outFacts[cfg.exit] = analysis.initialValue()
+            }
+        }
+
+        // Worklist algorithm
+        val worklist = mutableSetOf<BasicBlock>()
+        worklist.addAll(cfg.getAllBlocks())
+
+        while (worklist.isNotEmpty()) {
+            val block = worklist.first()
+            worklist.remove(block)
+
+            when (analysis.direction) {
+                Direction.FORWARD -> {
+                    // IN[block] = meet(OUT[pred] for all pred)
+                    val predValues =
+                        block.predecessors.mapNotNull { pred ->
+                            outFacts[pred]
+                        }
+                    val newIn = if (block == cfg.entry) analysis.initialValue() else analysis.meet(predValues)
+                    inFacts[block] = newIn
+
+                    // OUT[block] = transfer(IN[block], block)
+                    val newOut = analysis.transfer(newIn, block)
+
+                    // If OUT changed, add successors to worklist
+                    if (newOut != outFacts[block]) {
+                        outFacts[block] = newOut
+                        worklist.addAll(block.successors)
+                    }
+                }
+                Direction.BACKWARD -> {
+                    // OUT[block] = meet(IN[succ] for all succ)
+                    val succValues =
+                        block.successors.mapNotNull { succ ->
+                            inFacts[succ]
+                        }
+                    val newOut = if (block == cfg.exit) analysis.initialValue() else analysis.meet(succValues)
+                    outFacts[block] = newOut
+
+                    // IN[block] = transfer(OUT[block], block)
+                    val newIn = analysis.transfer(newOut, block)
+
+                    // If IN changed, add predecessors to worklist
+                    if (newIn != inFacts[block]) {
+                        inFacts[block] = newIn
+                        worklist.addAll(block.predecessors)
+                    }
+                }
+            }
+        }
+
+        return DataflowResult(inFacts, outFacts, analysis.direction)
+    }
+}
+
+/**
  * Abstract interface for dataflow analysis
- * This framework uses a worklist algorithm
  *
- * @param T the type of the dataflow facts (e.g., set of variables, etc.)
+ * @param T the type of the dataflow facts, must implement Lattice
  */
 abstract class DataflowAnalysis<T> {
     /**
@@ -33,10 +153,7 @@ abstract class DataflowAnalysis<T> {
     /**
      * Meet operator to merge dataflow facts from multiple predecessors/successors
      */
-    abstract fun meet(
-        values: List<T>,
-        block: BasicBlock,
-    ): T
+    abstract fun meet(values: List<T>): T
 
     /**
      * Transfer function for a basic block
@@ -48,81 +165,24 @@ abstract class DataflowAnalysis<T> {
     ): T
 
     /**
-     * Run the dataflow analysis on the CFG using a worklist algorithm
+     * Run the dataflow analysis on the CFG using the default worklist solver
      *
      * @param cfg the control flow graph to analyze
      * @return a map from basic blocks to their IN and OUT dataflow facts
      */
-    fun analyze(cfg: ControlFlowGraph): DataflowResult<T> {
-        val inFacts = mutableMapOf<BasicBlock, T>()
-        val outFacts = mutableMapOf<BasicBlock, T>()
+    fun analyze(cfg: ControlFlowGraph): DataflowResult<T> = analyze(cfg, WorklistSolver())
 
-        // Initialize all blocks
-        for (block in cfg.getAllBlocks()) {
-            inFacts[block] = boundaryValue()
-            outFacts[block] = boundaryValue()
-        }
-
-        // Set boundary condition
-        when (direction) {
-            Direction.FORWARD -> {
-                inFacts[cfg.entry] = initialValue()
-            }
-            Direction.BACKWARD -> {
-                outFacts[cfg.exit] = initialValue()
-            }
-        }
-
-        // Worklist algorithm
-        val worklist = mutableSetOf<BasicBlock>()
-        worklist.addAll(cfg.getAllBlocks())
-
-        while (worklist.isNotEmpty()) {
-            val block = worklist.first()
-            worklist.remove(block)
-
-            when (direction) {
-                Direction.FORWARD -> {
-                    // IN[block] = meet(OUT[pred] for all pred)
-                    val predValues =
-                        block.predecessors.mapNotNull { pred ->
-                            outFacts[pred]
-                        }
-                    val newIn = if (block == cfg.entry) initialValue() else meet(predValues, block)
-                    inFacts[block] = newIn
-
-                    // OUT[block] = transfer(IN[block], block)
-                    val newOut = transfer(newIn, block)
-
-                    // If OUT changed, add successors to worklist
-                    if (newOut != outFacts[block]) {
-                        outFacts[block] = newOut
-                        worklist.addAll(block.successors)
-                    }
-                }
-                Direction.BACKWARD -> {
-                    // OUT[block] = meet(IN[succ] for all succ)
-                    val succValues =
-                        block.successors.mapNotNull { succ ->
-                            inFacts[succ]
-                        }
-                    val newOut = if (block == cfg.exit) initialValue() else meet(succValues, block)
-                    outFacts[block] = newOut
-
-                    // IN[block] = transfer(OUT[block], block)
-                    val newIn = transfer(newOut, block)
-
-                    // If IN changed, add predecessors to worklist
-                    if (newIn != inFacts[block]) {
-                        inFacts[block] = newIn
-                        worklist.addAll(block.predecessors)
-                    }
-                }
-            }
-        }
-
-        return DataflowResult(inFacts, outFacts, direction)
-    }
+    /**
+     * Run the dataflow analysis on the CFG using a custom solver strategy
+     *
+     * @param cfg the control flow graph to analyze
+     * @param solver the solver strategy to use
+     * @return a map from basic blocks to their IN and OUT dataflow facts
+     */
+    fun analyze(
+        cfg: ControlFlowGraph,
+        solver: SolverStrategy,
+    ): DataflowResult<T> = solver.solve(cfg, this)
 }
 
 /**
@@ -170,10 +230,7 @@ class ReachingDefinitionsAnalysis : DataflowAnalysis<Set<String>>() {
 
     override fun boundaryValue(): Set<String> = emptySet()
 
-    override fun meet(
-        values: List<Set<String>>,
-        block: BasicBlock,
-    ): Set<String> =
+    override fun meet(values: List<Set<String>>): Set<String> =
         // Union of all predecessor OUT sets
         values.flatten().toSet()
 
@@ -224,10 +281,7 @@ class LiveVariablesAnalysis : DataflowAnalysis<Set<String>>() {
 
     override fun boundaryValue(): Set<String> = emptySet()
 
-    override fun meet(
-        values: List<Set<String>>,
-        block: BasicBlock,
-    ): Set<String> =
+    override fun meet(values: List<Set<String>>): Set<String> =
         // Union of all successor IN sets
         values.flatten().toSet()
 
