@@ -98,17 +98,34 @@ class CFGBuilder {
      * Build CFG for a program
      */
     fun buildForProgram(program: ProgramUnit): ControlFlowGraph {
+        // For backward compatibility with tests, return a single CFG representing the
+        // module-level "__module__main__" function if present. Otherwise, build a
+        // synthetic entry/exit with any top-level statements.
         blockIdCounter = 0
         allBlocks.clear()
 
-        val entry = newBlock()
-        val exit = newBlock()
+        if (program.stmt.isEmpty()) {
+            val entry = newBlock()
+            val exit = newBlock()
+            return ControlFlowGraph(entry, exit, allBlocks)
+        }
 
-        val bodyBlock = buildForStmtList(program.stmt, exit)
-        addEdge(entry, bodyBlock.entry)
-        addEdge(bodyBlock.exit, exit)
+        // Use the first module for program-level CFG
+        val module = program.stmt[0]
 
-        return ControlFlowGraph(entry, exit, allBlocks)
+        // Try to find the synthetic module main function created by the IR builder
+        val moduleMain = module.functions.find { it.name == "__module__main__" }
+        return if (moduleMain != null) {
+            buildForFunction(moduleMain)
+        } else if (module.functions.isNotEmpty()) {
+            // Fallback: build CFG for the first top-level function
+            buildForFunction(module.functions[0])
+        } else {
+            // No functions: create empty entry/exit
+            val entry = newBlock()
+            val exit = newBlock()
+            ControlFlowGraph(entry, exit, allBlocks)
+        }
     }
 
     private data class CFGSegment(
@@ -130,13 +147,25 @@ class CFGBuilder {
         var currentSegment = buildForStmt(stmts[0], exitBlock)
         val entry = currentSegment.entry
 
+        val accumulatedBreaks = mutableListOf<BasicBlock>()
+        val accumulatedContinues = mutableListOf<BasicBlock>()
+        accumulatedBreaks.addAll(currentSegment.breakTargets)
+        accumulatedContinues.addAll(currentSegment.continueTargets)
+
         for (i in 1 until stmts.size) {
             val nextSegment = buildForStmt(stmts[i], exitBlock)
+            // Normal flow: connect the previous segment's exit to the next segment's entry
             addEdge(currentSegment.exit, nextSegment.entry)
-            currentSegment = CFGSegment(entry, nextSegment.exit)
+
+            // Accumulate break/continue targets from subsequent segments; they should not be
+            // connected into the normal fall-through chain here (they are handled by loops)
+            accumulatedBreaks.addAll(nextSegment.breakTargets)
+            accumulatedContinues.addAll(nextSegment.continueTargets)
+
+            currentSegment = CFGSegment(entry, nextSegment.exit, accumulatedBreaks.toList(), accumulatedContinues.toList())
         }
 
-        return CFGSegment(entry, currentSegment.exit)
+        return CFGSegment(entry, currentSegment.exit, accumulatedBreaks.toList(), accumulatedContinues.toList())
     }
 
     private fun buildForStmt(
@@ -175,32 +204,52 @@ class CFGBuilder {
                 addEdge(thenSegment.exit, mergeBlock)
                 addEdge(elseSegment.exit, mergeBlock)
 
-                CFGSegment(condBlock, mergeBlock)
+                // combine break/continue targets from both branches and propagate upward
+                val combinedBreaks = thenSegment.breakTargets + elseSegment.breakTargets
+                val combinedContinues = thenSegment.continueTargets + elseSegment.continueTargets
+
+                CFGSegment(condBlock, mergeBlock, combinedBreaks, combinedContinues)
             }
 
             is Stmt.WhileStmt -> {
                 val condBlock = newBlock(listOf(stmt))
                 val mergeBlock = newBlock()
+
+                // Build the loop body with the knowledge that its breaks should target mergeBlock
                 val bodySegment = buildForStmt(stmt.body, exitBlock)
 
+                // Normal loop edges: cond -> body, body -> cond, cond -> merge (loop exit)
                 addEdge(condBlock, bodySegment.entry)
                 addEdge(bodySegment.exit, condBlock)
                 addEdge(condBlock, mergeBlock)
 
+                // Resolve break targets inside the loop: they should jump to mergeBlock
+                for (bt in bodySegment.breakTargets) {
+                    addEdge(bt, mergeBlock)
+                }
+
+                // Resolve continue targets inside the loop: they should jump to the condition block
+                for (ct in bodySegment.continueTargets) {
+                    addEdge(ct, condBlock)
+                }
+
+                // Consumed break/continue targets should not propagate beyond this loop
                 CFGSegment(condBlock, mergeBlock)
             }
 
             is Stmt.Break -> {
                 val block = newBlock(listOf(stmt))
                 // Break statements need special handling - they jump to the loop exit
-                // For now, we create a dead-end block
+                // Represent a break by returning the block as a break target. It will be
+                // wired up by the nearest enclosing loop to jump to the loop exit.
                 CFGSegment(block, block, breakTargets = listOf(block))
             }
 
             is Stmt.Continue -> {
                 val block = newBlock(listOf(stmt))
                 // Continue statements need special handling - they jump to the loop condition
-                // For now, we create a dead-end block
+                // Represent a continue by returning the block as a continue target. It will be
+                // wired up by the nearest enclosing loop to jump back to the loop condition.
                 CFGSegment(block, block, continueTargets = listOf(block))
             }
 

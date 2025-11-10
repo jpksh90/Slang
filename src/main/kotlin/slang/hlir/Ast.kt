@@ -1,9 +1,5 @@
 package slang.hlir
 
-import SlangLexer
-import SlangParser
-import org.antlr.v4.runtime.ANTLRInputStream
-import org.antlr.v4.runtime.CommonTokenStream
 import slang.common.CodeInfo
 import slang.common.CodeInfo.Companion.generic
 
@@ -66,7 +62,12 @@ enum class Operator {
 }
 
 data class ProgramUnit(
-    val stmt: List<Stmt>,
+    val stmt: List<SlangModule>,
+) : SlastNode()
+
+data class SlangModule(
+    val functions: List<Stmt.Function>,
+    val inlinedFuncs: List<Expr.InlinedFunction>,
 ) : SlastNode()
 
 sealed class Stmt : SlastNode() {
@@ -257,6 +258,11 @@ fun SlastNode.prettyPrint(tabStop: Int = 0): String {
         is Expr.ArrayInit -> "$indent [${elements.joinToString(", ") { it.prettyPrint() }}]"
         is Stmt.Break -> "$indent break;"
         is Stmt.Continue -> "$indent continue;"
+        is SlangModule -> {
+            val funcsStr = functions.joinToString("\n") { it.prettyPrint(tabStop) }
+            val inlinedStr = inlinedFuncs.joinToString("\n") { it.prettyPrint(tabStop) }
+            listOf(funcsStr, inlinedStr).filter { it.isNotBlank() }.joinToString("\n\n")
+        }
     }
 }
 

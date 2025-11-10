@@ -8,6 +8,7 @@ import org.fife.ui.rsyntaxtextarea.TokenMakerFactory
 import org.fife.ui.rtextarea.RTextScrollPane
 import slang.hlir.Expr
 import slang.hlir.ProgramUnit
+import slang.hlir.SlangModule
 import slang.hlir.SlastNode
 import slang.hlir.Stmt
 import slang.hlir.prettyPrint
@@ -182,6 +183,13 @@ fun SlastNode.toTreeNode(): DefaultMutableTreeNode =
                             add(DefaultMutableTreeNode("Type(${it.component2()})"))
                         },
                     )
+                }
+            }
+        is SlangModule ->
+            DefaultMutableTreeNode("Module").apply {
+                add(DefaultMutableTreeNode("Functions").apply { functions.forEach { add(it.toTreeNode()) } })
+                if (inlinedFuncs.isNotEmpty()) {
+                    add(DefaultMutableTreeNode("InlinedFunctions").apply { inlinedFuncs.forEach { add(it.toTreeNode()) } })
                 }
             }
     }

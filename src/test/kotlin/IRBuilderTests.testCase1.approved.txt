@@ -1,1 +1,19 @@
-Ok(value=ProgramUnit(stmt=[Function(name=power, params=[base, exp], body=BlockStmt(stmts=[LetStmt(name=result, expr=NumberLiteral(value=1.0)), WhileStmt(condition=BinaryExpr(left=VarExpr(name=exp), op=>, right=NumberLiteral(value=0.0)), body=BlockStmt(stmts=[AssignStmt(lhs=VarExpr(name=result), expr=BinaryExpr(left=VarExpr(name=result), op=*, right=VarExpr(name=base))), AssignStmt(lhs=VarExpr(name=exp), expr=BinaryExpr(left=VarExpr(name=exp), op=-, right=NumberLiteral(value=1.0)))])), ReturnStmt(expr=VarExpr(name=result))])), LetStmt(name=base, expr=ReadInputExpr), LetStmt(name=exp, expr=ReadInputExpr), PrintStmt(args=[NamedFunctionCall(name=power, arguments=[VarExpr(name=base), VarExpr(name=exp)])])]))
+ fun __module__main__() {
+  {
+     let base = readInput();
+     let exp = readInput();
+     print(power(base, exp));
+  }
+}
+ fun power(base, exp) {
+  {
+     let result = 1.0;
+     while (exp > 0.0) {
+      {
+        result = result * base;
+        exp = exp - 1.0;
+      }
+    }
+     return result;
+  }
+}

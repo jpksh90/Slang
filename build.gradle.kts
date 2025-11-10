@@ -1,3 +1,6 @@
+import java.nio.file.Files
+import java.nio.file.Paths
+
 plugins {
     kotlin("jvm") version "2.1.0"
     antlr
@@ -69,18 +72,22 @@ application {
 // Dry-run by default; pass -PapproveSnapshotsCommit=true to actually git-mv and commit.
 tasks.register<Exec>("approveSnapshots") {
     group = "verification"
-    description = "Run scripts/approve_snapshots.sh (dry-run). Use -PapproveSnapshotsCommit=true to commit approvals."
+    description = "Run scripts/approve_snapshots.sh (dry-run). Use -PtestPath=/path/to/test to commit approvals."
 
-    val commit = (project.findProperty("approveSnapshotsCommit") as String?).toBoolean()
+    val testPath = project.findProperty("testPath") as String?
     val scriptFile = file("scripts/approve_snapshots.sh")
     if (!scriptFile.exists()) {
         throw GradleException("Snapshot approval script not found: ${scriptFile.absolutePath}")
     }
 
-    // Use bash for portability and to support script features.
-    commandLine = listOf("bash", scriptFile.absolutePath) + if (commit) listOf("--commit") else emptyList()
+    if (testPath == null) {
+        throw GradleException("Test path not found}")
+    }
 
-    // Stream output to console so user sees what will happen.
+    if (Files.notExists(Paths.get(testPath))) {
+        throw GradleException("Directory does not exist: $testPath")
+    }
+    commandLine = listOf("bash", scriptFile.absolutePath, testPath)
     isIgnoreExitValue = false
 }
 
