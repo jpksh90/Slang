@@ -210,7 +210,15 @@ class SlastBuilder(
                     ProgramUnit(emptyList())
                 } else {
                     val stmts = ctx.stmt().map { visit(it) as Stmt }
-                    ProgramUnit(stmts)
+                    val moduleMain = Stmt.Function("__module__main__", emptyList(), Stmt.BlockStmt
+                        (stmts.filterNot {
+                        it is Stmt.Function || (it is Stmt.ExprStmt && it.expr is Expr.InlinedFunction)
+                    }))
+                    val topLevelInlineFuncs = stmts.filterIsInstance<Stmt.ExprStmt>().map { it.expr }
+                        .filterIsInstance<Expr.InlinedFunction>()
+                    val topLevelfuncs = stmts.filterIsInstance<Stmt.Function>()
+                    val slangModule = SlangModule(listOf(moduleMain) + topLevelfuncs, topLevelInlineFuncs )
+                    ProgramUnit(listOf(slangModule))
                 }
             expr.codeInfo = createSourceCodeInfo(ctx)
             return expr

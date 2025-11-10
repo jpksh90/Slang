@@ -15,9 +15,29 @@ class Interpreter {
         program: ProgramUnit,
         state: ConcreteState = ConcreteState(),
     ): ConcreteState =
-        program.stmt.fold(state) { currentState, stmt ->
-            val (newState, _) = executeStmt(stmt, currentState)
-            newState
+        // ProgramUnit now contains a list of SlangModule entries. Each module holds top-level functions
+        // and a synthetic module main that contains top-level statements. We need to:
+        // 1) register all top-level functions into the environment
+        // 2) execute the synthetic module main body so top-level stmts run
+        program.stmt.fold(state) { currentState, module ->
+            var s = currentState
+
+            // Register all top-level functions except the synthetic module main
+            val moduleMain = module.functions.find { it.name == "__module__main__" }
+            for (f in module.functions) {
+                if (f !== moduleMain) {
+                    val (newState, _) = executeStmt(f, s)
+                    s = newState
+                }
+            }
+
+            // Execute the synthetic module main body (if present) to run top-level statements
+            if (moduleMain != null) {
+                val (afterMainState, _) = executeStmt(moduleMain.body, s)
+                s = afterMainState
+            }
+
+            s
         }
 
     private fun executeStmt(
