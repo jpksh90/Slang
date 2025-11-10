@@ -362,12 +362,12 @@ class ParseTree2HlirTrasnformer : Transform<ParseTree, ProgramUnit> {
         }
 }
 
-fun file2hlir(file: File): Result<ProgramUnit, List<CompilerError>> {
+fun file2hlir(file: File): Result<ProgramUnit, List<*>> {
     val transformers = File2ParseTreeTransformer() then ParseTree2HlirTrasnformer()
     return transformers.invoke(file)
 }
 
-fun string2hlir(string: String): Result<ProgramUnit, List<CompilerError>> {
+fun string2hlir(string: String): Result<ProgramUnit, List<*>> {
     val transformers = String2ParseTreeTransformer() then ParseTree2HlirTrasnformer()
     return transformers.invoke(string)
 }

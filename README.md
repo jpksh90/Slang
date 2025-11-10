@@ -1,142 +1,90 @@
 # Slang
 
-Slang is a simple programming language designed for educational purposes. It features basic constructs such as variable declarations, function definitions, control flow statements, and expressions. The language is designed to be easy to understand and use, making it ideal for learning the fundamentals of programming languages and compilers.
+Slang is a small educational programming language implemented in Java/Kotlin with ANTLR for parsing. This README explains how to get the codebase running locally and how to start contributing.
 
-## Features
+## Quick start
 
-- **Variable Declarations**: Declare variables using the `let` keyword.
-- **Function Definitions**: Define pure and impure functions using the `fun` keyword.
-- **Control Flow**: Supports `if-else`, `while`, `for`, and `do-while` statements.
-- **Expressions**: Supports arithmetic, boolean, comparison, and function call expressions.
-- **Built-in Functions**: Includes a `print` function for output and a `readInput` function for input.
-
-## Grammar
-
-The grammar for Slang is defined using ANTLR and includes the following rules:
-
-- **compilationUnit**: The root of the program, consisting of multiple statements.
-- **stmt**: Statements including variable declarations, assignments, function definitions, control flow, and expressions.
-- **expr**: Expressions including arithmetic, boolean, comparison, and function calls.
-- **primaryExpr**: Primary expressions such as numbers, booleans, strings, and variable references.
-
-## Example
-
-Here is an example of a Slang program:
-
-```
-fun apply_n(f, n, x) => if (n == 0) then x else f(apply_n(f, n - 1, f(x)));
-```
-
-This program defines a higher-order function `apply_n` that applies a given function `f` `n` times to an input `x`.
-
-## Project Structure
-
-- `src/main/antlr/Slang.g4`: The ANTLR grammar file for Slang.
-- `src/main/kotlin/slast/ast/AstBuilder.kt`: The AST builder that constructs the abstract syntax tree from the parse tree.
-- `build/generated-src/antlr/main/SlangParser.java`: The generated parser code.
-
-## Build Status
-
-[![Build and Test](https://github.com/jpksh90/Slang/actions/workflows/build.yml/badge.svg)](https://github.com/jpksh90/Slang/actions/workflows/build.yml)
-
-To build the code for the Slang project, follow these steps:
-
-1. **Ensure Prerequisites**:
-    - Install [Java Development Kit (JDK)](https://adoptopenjdk.net/) version 21 or higher.
-    - Install [Gradle](https://gradle.org/) or use the Gradle wrapper (`gradlew`) included in the project.
-
-2. **Clone the Repository**:
-   Clone the project repository to your local machine:
-   ```sh
+1. Install prerequisites:
+   - JDK 21 or later.
+   - No global Gradle required; use the included wrapper `./gradlew`.
+2. Clone the repository:
+   ```bash
    git clone https://github.com/jpksh90/Slang.git
    cd Slang
    ```
-
-3. **Build the Project**:
-   Use the Gradle wrapper to build the project:
-   ```sh
-   ./gradlew build
-   ```
-
-   On Windows, use:
-   ```cmd
-   gradlew.bat build
-   ```
-
-4. **Run Tests**:
-   To ensure everything is working correctly, run the tests:
-   ```sh
+3. Build the project (this generates ANTLR sources and compiles):
+  ```bash
+   ./gradlew clean build
+  ```
+4. Run tests:
+  ```bash
    ./gradlew test
-   ```
-
-5. **Generated Files**:
-    - The compiled classes will be located in the `build/classes` directory.
-    - Test reports will be available in `build/reports/tests`.
-
-## Run the Application
-
-To run the Slang application using the provided `slangc` script, follow these commands:
-
-```bash
-./slangc <input-file>
-## For example:  
-./slangc src/test/resources/facl.slang
-```
-
-By default, the script will interpret and execute the Slang program.
-
-### Output Modes
-
-You can specify different output modes using the `-o` flag:
-
-- **Run mode** (default): Execute the program
-  ```bash
-  ./slangc src/test/resources/sum_prod.slang
-  # or explicitly:
-  ./slangc -o run src/test/resources/sum_prod.slang
   ```
 
-- **AST mode**: Output the Abstract Syntax Tree
+## Open in IntelliJ IDEA (macOS)
+
+- File > Open... > select the repository root (or the `build.gradle` file).
+- Enable Gradle auto-import when prompted.
+- If the IDE does not recognize generated sources, run:
   ```bash
-  ./slangc -o ast src/test/resources/sum_prod.slang
+  ./gradlew generateGrammarSource
+  ./gradlew build
   ```
+- To run or debug the REPL or the main application, create an Application run configuration that points to the appropriate `main` class or use the Gradle task `run`.
 
-- **IR mode**: Output the Intermediate Representation
-  ```bash
-  ./slangc -o ir src/test/resources/sum_prod.slang
-  ```
+## Useful commands
 
-### Interactive REPL
-
-You can also start an interactive REPL (Read-Eval-Print Loop):
-
+- Run the REPL:
 ```bash
 ./gradlew run --console=plain --quiet
 ```
-
-In the REPL, you can enter Slang statements and see the results immediately:
-
+- Use the provided script to interpret a file:
+  ```bash
+  ./slangc <input-file>
+  # Example:
+  ./slangc src/test/resources/facl.slang
 ```
-Welcome to the Slang REPL!
-> let x = 5;
-> let y = 10;
-> print(x + y);
-15
-> exit
-```
+- `slangc` supports output modes via `-o`:
+  - Run mode (default): `./slangc src/test/resources/sum_prod.slang`
+  - AST mode: `./slangc -o ast src/test/resources/sum_prod.slang`
+  - IR mode: `./slangc -o ir src/test/resources/sum_prod.slang`
 
-### Examples
-
-Run the factorial example:
+- Clean build artifacts:
 ```bash
-echo "5" | ./slangc src/test/resources/facl.slang
-# Output: 120
+  ./gradlew clean
 ```
 
-Run the sum and product example:
+## Project layout (important files)
+
+- `src/main/antlr/Slang.g4` — ANTLR grammar.
+- `src/main/kotlin/slast/ast/AstBuilder.kt` — AST builder from parse tree.
+- `build/generated-src/antlr/main/SlangParser.java` — generated parser (do not edit).
+- `src/test/resources/` — example `.slang` programs used by tests.
+
+## Development notes
+
+- Grammar changes: edit `src/main/antlr/Slang.g4` and regenerate:
 ```bash
-./slangc src/test/resources/sum_prod.slang
-# Output:
-# 15
-# 50
+  ./gradlew generateGrammarSource
+  ./gradlew build
 ``` 
+- Tests exercise language features. Run them frequently when changing parser/AST/IR.
+- Keep generated parser files out of manual edits; regenerate from the .g4 source.
+
+## Contributing
+
+- Create a feature branch from `main`.
+- Ensure `./gradlew build` and `./gradlew test` pass locally before opening a PR.
+- Use small, focused commits and describe the intent in the PR.
+
+## Troubleshooting
+
+- If IntelliJ can't see generated sources: run `./gradlew generateGrammarSource` then refresh Gradle projects.
+- If Gradle fails due to JDK version, confirm `java -version` shows JDK 21+ and adjust `IDEA Project SDK` if needed.
+
+## Contact
+
+- Open issues or pull requests on GitHub at the repository root.
+
+## AI Disclaimer
+- AI was heavily used to generate the code.

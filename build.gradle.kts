@@ -3,6 +3,7 @@ plugins {
     antlr
     application
     id("org.jlleitschuh.gradle.ktlint") version "12.1.0"
+    id("com.diffplug.spotless") version "6.25.0"
 }
 
 kotlin {
@@ -116,4 +117,19 @@ tasks.runKtlintCheckOverTestSourceSet {
 tasks.runKtlintFormatOverTestSourceSet {
     enabled = true
     dependsOn(tasks.generateTestGrammarSource)
+}
+
+spotless {
+    kotlin {
+        ktlint
+        target("**/*.kt")
+        targetExclude("build/**", "**/generated/**")
+        trimTrailingWhitespace()
+        endWithNewline()
+        indentWithSpaces()
+    }
+    kotlinGradle {
+        target("**/*.gradle.kts")
+        ktlint()
+    }
 }
