@@ -1,20 +1,21 @@
 package slang.common
 
-interface Transform<I, O> {
-    fun transform(input: I): Result<O, List<*>>
+import slang.parser.CompilerError
+
+fun interface Transform<In, Out> {
+    fun transform(input: In): Result<Out, List<CompilerError>>
 }
 
-infix fun <I, O1, O2> Transform<I, O1>.then(other: Transform<O1, O2>): Transform<I, O2> {
-    val first = this
-    return object : Transform<I, O2> {
-        override fun transform(input: I): Result<O2, List<*>> {
-            val result = first.transform(input)
-            return when (result) {
-                is Result.Ok -> other.transform(result.value)
-                is Result.Err -> result
-            }
+fun <A, B, C> Transform<A, B>.andThen(next: Transform<B, C>): Transform<A, C> =
+    Transform { input ->
+        when (val r = this.transform(input)) {
+            is Result.Ok -> next.transform(r.value)
+            is Result.Err -> Result.Err(r.error)
         }
     }
-}
 
-operator fun <I, O> Transform<I, O>.invoke(input: I): Result<O, List<*>> = transform(input)
+/** Infix alias for [andThen] to read nicely in pipelines. */
+infix fun <A, B, C> Transform<A, B>.then(next: Transform<B, C>): Transform<A, C> = this.andThen(next)
+
+/** Allow calling a transform like a function: `t(input)` returns Result. */
+operator fun <A, B> Transform<A, B>.invoke(input: A): Result<B, List<CompilerError>> = this.transform(input)

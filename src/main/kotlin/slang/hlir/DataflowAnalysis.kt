@@ -69,58 +69,58 @@ class WorklistSolver : SolverStrategy {
 
         // Set boundary condition
         when (analysis.direction) {
-            Direction.FORWARD -> {
-                inFacts[cfg.entry] = analysis.initialValue()
-            }
-            Direction.BACKWARD -> {
-                outFacts[cfg.exit] = analysis.initialValue()
-            }
+            Direction.FORWARD -> inFacts[cfg.entry] = analysis.initialValue()
+            Direction.BACKWARD -> outFacts[cfg.exit] = analysis.initialValue()
         }
 
-        // Worklist algorithm
-        val worklist = mutableSetOf<BasicBlock>()
+        // Helper lambdas to avoid duplicating neighbor/meet logic
+        val neighborValues: (BasicBlock) -> List<T> =
+            when (analysis.direction) {
+                Direction.FORWARD -> { b -> b.predecessors.mapNotNull { outFacts[it] } }
+                Direction.BACKWARD -> { b -> b.successors.mapNotNull { inFacts[it] } }
+            }
+
+        val isBoundaryBlock: (BasicBlock) -> Boolean =
+            when (analysis.direction) {
+                Direction.FORWARD -> { b -> b == cfg.entry }
+                Direction.BACKWARD -> { b -> b == cfg.exit }
+            }
+
+        val worklist = ArrayDeque<BasicBlock>()
         worklist.addAll(cfg.getAllBlocks())
 
         while (worklist.isNotEmpty()) {
-            val block = worklist.first()
-            worklist.remove(block)
+            val block = worklist.removeFirst()
 
-            when (analysis.direction) {
-                Direction.FORWARD -> {
-                    // IN[block] = meet(OUT[pred] for all pred)
-                    val predValues =
-                        block.predecessors.mapNotNull { pred ->
-                            outFacts[pred]
-                        }
-                    val newIn = if (block == cfg.entry) analysis.initialValue() else analysis.meet(predValues)
-                    inFacts[block] = newIn
+            // Compute meet over neighbors (or use initial value for boundary)
+            val meetValue = if (isBoundaryBlock(block)) analysis.initialValue() else analysis.meet(neighborValues(block))
 
-                    // OUT[block] = transfer(IN[block], block)
-                    val newOut = analysis.transfer(newIn, block)
+            if (analysis.direction == Direction.FORWARD) {
+                // IN = meet(pred OUTs)
+                val newIn = meetValue
+                inFacts[block] = newIn
 
-                    // If OUT changed, add successors to worklist
-                    if (newOut != outFacts[block]) {
-                        outFacts[block] = newOut
-                        worklist.addAll(block.successors)
-                    }
-                }
-                Direction.BACKWARD -> {
-                    // OUT[block] = meet(IN[succ] for all succ)
-                    val succValues =
-                        block.successors.mapNotNull { succ ->
-                            inFacts[succ]
-                        }
-                    val newOut = if (block == cfg.exit) analysis.initialValue() else analysis.meet(succValues)
+                // OUT = transfer(IN)
+                val newOut = analysis.transfer(newIn, block)
+
+                // If OUT changed, add successors to worklist
+                if (newOut != outFacts[block]) {
                     outFacts[block] = newOut
+                    worklist.addAll(block.successors)
+                }
+            } else {
+                // BACKWARD
+                // OUT = meet(succ INs)
+                val newOut = meetValue
+                outFacts[block] = newOut
 
-                    // IN[block] = transfer(OUT[block], block)
-                    val newIn = analysis.transfer(newOut, block)
+                // IN = transfer(OUT)
+                val newIn = analysis.transfer(newOut, block)
 
-                    // If IN changed, add predecessors to worklist
-                    if (newIn != inFacts[block]) {
-                        inFacts[block] = newIn
-                        worklist.addAll(block.predecessors)
-                    }
+                // If IN changed, add predecessors to worklist
+                if (newIn != inFacts[block]) {
+                    inFacts[block] = newIn
+                    worklist.addAll(block.predecessors)
                 }
             }
         }

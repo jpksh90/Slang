@@ -2,14 +2,12 @@ package slang.hlir
 
 import slang.common.Result
 import kotlin.test.Test
-import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class ControlFlowGraphTest {
     @Test
-    fun testSimpleSequentialProgram() {
-        // Test: let x = 10; let y = 5; print(x + y);
+    fun testSimpleSequentialProgram() { // Test: let x = 10; let y = 5; print(x + y);
         val program =
             """
             let x = 10;
@@ -34,8 +32,7 @@ class ControlFlowGraphTest {
     }
 
     @Test
-    fun testIfStatement() {
-        // Test: if (x > 0) then { print(x); } else { print(0); }
+    fun testIfStatement() { // Test: if (x > 0) then { print(x); } else { print(0); }
         val program =
             """
             let x = 10;
@@ -61,8 +58,7 @@ class ControlFlowGraphTest {
     }
 
     @Test
-    fun testWhileLoop() {
-        // Test: while (x > 0) { x = x - 1; }
+    fun testWhileLoop() { // Test: while (x > 0) { x = x - 1; }
         val program =
             """
             let x = 10;
@@ -86,8 +82,7 @@ class ControlFlowGraphTest {
     }
 
     @Test
-    fun testFunctionCFG() {
-        // Test function with if-then-else
+    fun testFunctionCFG() { // Test function with if-then-else
         val program =
             """
             fun max(a, b) {

@@ -11,9 +11,7 @@ class IRBuilderTests {
     fun loadTestProgram(name: String): URL? = IRBuilderTests::class.java.getResource("/$name")
 
     fun buildAst(testCase: URL): String {
-        val hlir =
-            (File2ParseTreeTransformer() then ParseTree2HlirTrasnformer())
-                .invoke(File(testCase.toURI()))
+        val hlir = (File2ParseTreeTransformer() then ParseTree2HlirTrasnformer()).invoke(File(testCase.toURI()))
         return hlir.toString()
     }
 

@@ -43,9 +43,9 @@ open class Parser {
 }
 
 class String2ParseTreeTransformer : Transform<String, ParseTree> {
-    override fun transform(input: String): Result<ParseTree, List<*>> = Parser().parse(ANTLRInputStream(input))
+    override fun transform(input: String): Result<ParseTree, List<CompilerError>> = Parser().parse(ANTLRInputStream(input))
 }
 
 class File2ParseTreeTransformer : Transform<File, ParseTree> {
-    override fun transform(input: File): Result<ParseTree, List<*>> = Parser().parse(ANTLRInputStream(input.inputStream()))
+    override fun transform(input: File): Result<ParseTree, List<CompilerError>> = Parser().parse(ANTLRInputStream(input.inputStream()))
 }

@@ -2,14 +2,12 @@ package slang.hlir
 
 import slang.common.Result
 import kotlin.test.Test
-import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class DataflowAnalysisTest {
     @Test
-    fun testReachingDefinitionsSimple() {
-        // Test: let x = 10; let y = 5; print(x + y);
+    fun testReachingDefinitionsSimple() { // Test: let x = 10; let y = 5; print(x + y);
         val program =
             """
             let x = 10;
@@ -202,8 +200,7 @@ class DataflowAnalysisTest {
             override fun boundaryValue(): Map<String, Boolean> = emptyMap()
 
             override fun meet(values: List<Map<String, Boolean>>): Map<String, Boolean> {
-                if (values.isEmpty()) return emptyMap()
-                // Intersection of all maps
+                if (values.isEmpty()) return emptyMap() // Intersection of all maps
                 val result = values[0].toMutableMap()
                 for (i in 1 until values.size) {
                     result.keys.retainAll(values[i].keys)
@@ -218,10 +215,10 @@ class DataflowAnalysisTest {
                 val output = input.toMutableMap()
                 for (stmt in block.stmts) {
                     when (stmt) {
-                        is Stmt.LetStmt -> {
-                            // Track if it's a constant literal
+                        is Stmt.LetStmt -> { // Track if it's a constant literal
                             output[stmt.name] = stmt.expr is Expr.NumberLiteral
                         }
+
                         else -> {}
                     }
                 }
