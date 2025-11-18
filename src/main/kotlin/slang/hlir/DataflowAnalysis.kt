@@ -220,122 +220,170 @@ data class DataflowResult<T>(
 }
 
 /**
- * Example: Reaching Definitions Analysis
+ * Set lattice for dataflow analysis
+ * Provides set operations for gen-kill analyses
+ */
+class SetLattice<E> {
+    /**
+     * Set difference operation: input - kill
+     */
+    fun difference(
+        input: Set<E>,
+        kill: Set<E>,
+    ): Set<E> = input - kill
+
+    /**
+     * Set union operation: left ∪ right
+     */
+    fun union(
+        left: Set<E>,
+        right: Set<E>,
+    ): Set<E> = left + right
+
+    /**
+     * Meet operator: union of all sets (for may-analysis)
+     */
+    fun meet(values: List<Set<E>>): Set<E> = values.flatten().toSet()
+}
+
+/**
+ * Generic gen-kill framework for dataflow analysis
+ * This framework implements the standard gen-kill pattern where:
+ *   OUT = (IN - kill) ∪ gen  (for forward analysis)
+ *   IN  = (OUT - kill) ∪ gen (for backward analysis)
+ *
+ * @param T the type of elements in the sets
+ * @param lattice the set lattice providing set operations
+ */
+abstract class GenKillAnalysis<T>(
+    override val direction: Direction,
+    private val lattice: SetLattice<T>,
+) : DataflowAnalysis<Set<T>>() {
+    /**
+     * Compute the gen set for a basic block or statement
+     * Gen represents facts that are generated/defined at this point
+     */
+    abstract fun gen(block: BasicBlock): Set<T>
+
+    /**
+     * Compute the kill set for a basic block or statement
+     * Kill represents facts that are invalidated/killed at this point
+     */
+    abstract fun kill(block: BasicBlock): Set<T>
+
+    /**
+     * Transfer function using gen-kill pattern
+     */
+    override fun transfer(
+        input: Set<T>,
+        block: BasicBlock,
+    ): Set<T> {
+        val genSet = gen(block)
+        val killSet = kill(block)
+        // OUT = (IN - kill) ∪ gen
+        return lattice.union(lattice.difference(input, killSet), genSet)
+    }
+
+    /**
+     * Meet operator delegates to the lattice
+     */
+    override fun meet(values: List<Set<T>>): Set<T> = lattice.meet(values)
+}
+
+/**
+ * Example: Reaching Definitions Analysis using Gen-Kill Framework
  * A definition reaches a point if there exists a path from the definition to that point
  * where the variable is not redefined
  */
-class ReachingDefinitionsAnalysis : DataflowAnalysis<Set<String>>() {
-    override val direction = Direction.FORWARD
-
+class ReachingDefinitionsAnalysis : GenKillAnalysis<String>(Direction.FORWARD, SetLattice()) {
     override fun initialValue(): Set<String> = emptySet()
 
     override fun boundaryValue(): Set<String> = emptySet()
 
-    override fun meet(values: List<Set<String>>): Set<String> =
-        // Union of all predecessor OUT sets
-        values.flatten().toSet()
-
-    override fun transfer(
-        input: Set<String>,
-        block: BasicBlock,
-    ): Set<String> {
+    override fun gen(block: BasicBlock): Set<String> {
         val gen = mutableSetOf<String>()
-        val kill = mutableSetOf<String>()
-
-        // Process each statement in the block
         for (stmt in block.stmts) {
             when (stmt) {
-                is Stmt.LetStmt -> {
-                    gen.add(stmt.name)
-                    kill.add(stmt.name) // Kill previous definitions
-                }
+                is Stmt.LetStmt -> gen.add(stmt.name)
                 is Stmt.AssignStmt -> {
                     when (val lhs = stmt.lhs) {
-                        is Expr.VarExpr -> {
-                            gen.add(lhs.name)
-                            kill.add(lhs.name) // Kill previous definitions
-                        }
-                        else -> {
-                            // For more complex assignments, we don't track them yet
-                        }
+                        is Expr.VarExpr -> gen.add(lhs.name)
+                        else -> {}
                     }
                 }
-                else -> {
-                    // Other statements don't define variables
-                }
+                else -> {}
             }
         }
+        return gen
+    }
 
-        // OUT = (IN - kill) ∪ gen
-        return (input - kill) + gen
+    override fun kill(block: BasicBlock): Set<String> {
+        val kill = mutableSetOf<String>()
+        for (stmt in block.stmts) {
+            when (stmt) {
+                is Stmt.LetStmt -> kill.add(stmt.name)
+                is Stmt.AssignStmt -> {
+                    when (val lhs = stmt.lhs) {
+                        is Expr.VarExpr -> kill.add(lhs.name)
+                        else -> {}
+                    }
+                }
+                else -> {}
+            }
+        }
+        return kill
     }
 }
 
 /**
- * Example: Live Variables Analysis
+ * Example: Live Variables Analysis using Gen-Kill Framework
  * A variable is live at a point if its value may be used in the future
+ * For live variables: gen = use, kill = def
  */
-class LiveVariablesAnalysis : DataflowAnalysis<Set<String>>() {
-    override val direction = Direction.BACKWARD
-
+class LiveVariablesAnalysis : GenKillAnalysis<String>(Direction.BACKWARD, SetLattice()) {
     override fun initialValue(): Set<String> = emptySet()
 
     override fun boundaryValue(): Set<String> = emptySet()
 
-    override fun meet(values: List<Set<String>>): Set<String> =
-        // Union of all successor IN sets
-        values.flatten().toSet()
-
-    override fun transfer(
-        input: Set<String>,
-        block: BasicBlock,
-    ): Set<String> {
+    override fun gen(block: BasicBlock): Set<String> {
+        // Gen = use (variables used in the block)
         val use = mutableSetOf<String>()
-        val def = mutableSetOf<String>()
-
-        // Process each statement in the block (in reverse for backward analysis)
+        // Process in reverse for backward analysis
         for (stmt in block.stmts.reversed()) {
             when (stmt) {
-                is Stmt.LetStmt -> {
-                    def.add(stmt.name)
-                    use.addAll(getUsedVariables(stmt.expr))
-                }
-                is Stmt.AssignStmt -> {
-                    when (val lhs = stmt.lhs) {
-                        is Expr.VarExpr -> {
-                            def.add(lhs.name)
-                        }
-                        else -> {
-                            // For complex assignments, we don't track them yet
-                        }
-                    }
-                    use.addAll(getUsedVariables(stmt.expr))
-                }
+                is Stmt.LetStmt -> use.addAll(getUsedVariables(stmt.expr))
+                is Stmt.AssignStmt -> use.addAll(getUsedVariables(stmt.expr))
                 is Stmt.PrintStmt -> {
                     for (arg in stmt.args) {
                         use.addAll(getUsedVariables(arg))
                     }
                 }
-                is Stmt.ExprStmt -> {
-                    use.addAll(getUsedVariables(stmt.expr))
-                }
-                is Stmt.ReturnStmt -> {
-                    use.addAll(getUsedVariables(stmt.expr))
-                }
-                is Stmt.IfStmt -> {
-                    use.addAll(getUsedVariables(stmt.condition))
-                }
-                is Stmt.WhileStmt -> {
-                    use.addAll(getUsedVariables(stmt.condition))
-                }
-                else -> {
-                    // Other statements don't use/define variables
-                }
+                is Stmt.ExprStmt -> use.addAll(getUsedVariables(stmt.expr))
+                is Stmt.ReturnStmt -> use.addAll(getUsedVariables(stmt.expr))
+                is Stmt.IfStmt -> use.addAll(getUsedVariables(stmt.condition))
+                is Stmt.WhileStmt -> use.addAll(getUsedVariables(stmt.condition))
+                else -> {}
             }
         }
+        return use
+    }
 
-        // IN = (OUT - def) ∪ use
-        return (input - def) + use
+    override fun kill(block: BasicBlock): Set<String> {
+        // Kill = def (variables defined in the block)
+        val def = mutableSetOf<String>()
+        for (stmt in block.stmts.reversed()) {
+            when (stmt) {
+                is Stmt.LetStmt -> def.add(stmt.name)
+                is Stmt.AssignStmt -> {
+                    when (val lhs = stmt.lhs) {
+                        is Expr.VarExpr -> def.add(lhs.name)
+                        else -> {}
+                    }
+                }
+                else -> {}
+            }
+        }
+        return def
     }
 
     private fun getUsedVariables(expr: Expr): Set<String> {
@@ -393,5 +441,201 @@ class LiveVariablesAnalysis : DataflowAnalysis<Set<String>>() {
 
         visit(expr)
         return used
+    }
+}
+
+/**
+ * Lattice element for constant propagation
+ * Represents the constant value of a variable or BOTTOM/TOP
+ */
+sealed class ConstantValue {
+    /** Top element - no information yet */
+    object Top : ConstantValue() {
+        override fun toString() = "⊤"
+    }
+
+    /** Bottom element - not a constant (multiple possible values) */
+    object Bottom : ConstantValue() {
+        override fun toString() = "⊥"
+    }
+
+    /** A constant numeric value */
+    data class Constant(
+        val value: Double,
+    ) : ConstantValue() {
+        override fun toString() = value.toString()
+    }
+}
+
+/**
+ * Constant Propagation Analysis
+ * Tracks which variables have constant values at each program point
+ * Uses the worklist solver from the generic framework
+ */
+class ConstantPropagationAnalysis : DataflowAnalysis<Map<String, ConstantValue>>() {
+    override val direction = Direction.FORWARD
+
+    override fun initialValue(): Map<String, ConstantValue> = emptyMap()
+
+    override fun boundaryValue(): Map<String, ConstantValue> = emptyMap()
+
+    override fun meet(values: List<Map<String, ConstantValue>>): Map<String, ConstantValue> {
+        if (values.isEmpty()) return emptyMap()
+
+        // Collect all variable names
+        val allVars = values.flatMap { it.keys }.toSet()
+        val result = mutableMapOf<String, ConstantValue>()
+
+        for (varName in allVars) {
+            // Meet of constant values: if all have same constant, use it; otherwise BOTTOM
+            val varValues = values.mapNotNull { it[varName] }
+            if (varValues.isEmpty()) {
+                // Variable not in any predecessor
+                continue
+            }
+
+            // Start with the first value
+            var meetValue: ConstantValue = varValues[0]
+            for (i in 1 until varValues.size) {
+                meetValue = meetConstantValues(meetValue, varValues[i])
+            }
+            result[varName] = meetValue
+        }
+
+        return result
+    }
+
+    /**
+     * Meet two constant values
+     * TOP ⊓ x = x
+     * x ⊓ TOP = x
+     * BOTTOM ⊓ x = BOTTOM
+     * x ⊓ BOTTOM = BOTTOM
+     * Constant(c1) ⊓ Constant(c2) = Constant(c1) if c1 == c2, else BOTTOM
+     */
+    private fun meetConstantValues(
+        v1: ConstantValue,
+        v2: ConstantValue,
+    ): ConstantValue =
+        when {
+            v1 is ConstantValue.Top -> v2
+            v2 is ConstantValue.Top -> v1
+            v1 is ConstantValue.Bottom -> ConstantValue.Bottom
+            v2 is ConstantValue.Bottom -> ConstantValue.Bottom
+            v1 is ConstantValue.Constant && v2 is ConstantValue.Constant -> {
+                if (v1.value == v2.value) v1 else ConstantValue.Bottom
+            }
+            else -> ConstantValue.Bottom
+        }
+
+    override fun transfer(
+        input: Map<String, ConstantValue>,
+        block: BasicBlock,
+    ): Map<String, ConstantValue> {
+        val output = input.toMutableMap()
+
+        for (stmt in block.stmts) {
+            when (stmt) {
+                is Stmt.LetStmt -> {
+                    // Evaluate the expression with current constant values
+                    output[stmt.name] = evaluateExpr(stmt.expr, output)
+                }
+                is Stmt.AssignStmt -> {
+                    when (val lhs = stmt.lhs) {
+                        is Expr.VarExpr -> {
+                            output[lhs.name] = evaluateExpr(stmt.expr, output)
+                        }
+                        else -> {
+                            // Complex assignment - don't track
+                        }
+                    }
+                }
+                else -> {
+                    // Other statements don't affect constants
+                }
+            }
+        }
+
+        return output
+    }
+
+    /**
+     * Evaluate an expression to a constant value if possible
+     */
+    private fun evaluateExpr(
+        expr: Expr,
+        constants: Map<String, ConstantValue>,
+    ): ConstantValue =
+        when (expr) {
+            is Expr.NumberLiteral -> ConstantValue.Constant(expr.value)
+            is Expr.VarExpr -> constants[expr.name] ?: ConstantValue.Top
+            is Expr.BinaryExpr -> {
+                val left = evaluateExpr(expr.left, constants)
+                val right = evaluateExpr(expr.right, constants)
+                evaluateBinaryOp(expr.op, left, right)
+            }
+            is Expr.ParenExpr -> evaluateExpr(expr.expr, constants)
+            else -> ConstantValue.Bottom // Unknown/non-constant expression
+        }
+
+    /**
+     * Evaluate a binary operation on constant values
+     */
+    private fun evaluateBinaryOp(
+        op: Operator,
+        left: ConstantValue,
+        right: ConstantValue,
+    ): ConstantValue {
+        if (left is ConstantValue.Constant && right is ConstantValue.Constant) {
+            return try {
+                when (op) {
+                    Operator.PLUS -> ConstantValue.Constant(left.value + right.value)
+                    Operator.MINUS -> ConstantValue.Constant(left.value - right.value)
+                    Operator.TIMES -> ConstantValue.Constant(left.value * right.value)
+                    Operator.DIV -> {
+                        if (right.value == 0.0) {
+                            ConstantValue.Bottom
+                        } else {
+                            ConstantValue.Constant(left.value / right.value)
+                        }
+                    }
+                    Operator.MOD -> {
+                        if (right.value == 0.0) {
+                            ConstantValue.Bottom
+                        } else {
+                            ConstantValue.Constant(left.value % right.value)
+                        }
+                    }
+                    // Comparison operators return 0.0 or 1.0 (false or true)
+                    Operator.EQ -> ConstantValue.Constant(if (left.value == right.value) 1.0 else 0.0)
+                    Operator.NEQ -> ConstantValue.Constant(if (left.value != right.value) 1.0 else 0.0)
+                    Operator.LT -> ConstantValue.Constant(if (left.value < right.value) 1.0 else 0.0)
+                    Operator.GT -> ConstantValue.Constant(if (left.value > right.value) 1.0 else 0.0)
+                    Operator.LEQ -> ConstantValue.Constant(if (left.value <= right.value) 1.0 else 0.0)
+                    Operator.GEQ -> ConstantValue.Constant(if (left.value >= right.value) 1.0 else 0.0)
+                    // Logical operators: 0.0 is false, non-zero is true
+                    Operator.AND -> {
+                        ConstantValue.Constant(
+                            if (left.value != 0.0 && right.value != 0.0) 1.0 else 0.0,
+                        )
+                    }
+                    Operator.OR -> {
+                        ConstantValue.Constant(
+                            if (left.value != 0.0 || right.value != 0.0) 1.0 else 0.0,
+                        )
+                    }
+                }
+            } catch (e: ArithmeticException) {
+                ConstantValue.Bottom
+            }
+        }
+
+        // If either operand is BOTTOM, result is BOTTOM
+        if (left is ConstantValue.Bottom || right is ConstantValue.Bottom) {
+            return ConstantValue.Bottom
+        }
+
+        // If either operand is TOP, result is TOP (no information yet)
+        return ConstantValue.Top
     }
 }
