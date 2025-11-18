@@ -220,56 +220,74 @@ data class DataflowResult<T>(
 }
 
 /**
+ * Set lattice for dataflow analysis
+ * Provides set operations for gen-kill analyses
+ */
+class SetLattice<E> {
+    /**
+     * Set difference operation: input - kill
+     */
+    fun difference(
+        input: Set<E>,
+        kill: Set<E>,
+    ): Set<E> = input - kill
+
+    /**
+     * Set union operation: left ∪ right
+     */
+    fun union(
+        left: Set<E>,
+        right: Set<E>,
+    ): Set<E> = left + right
+
+    /**
+     * Meet operator: union of all sets (for may-analysis)
+     */
+    fun meet(values: List<Set<E>>): Set<E> = values.flatten().toSet()
+}
+
+/**
  * Generic gen-kill framework for dataflow analysis
  * This framework implements the standard gen-kill pattern where:
  *   OUT = (IN - kill) ∪ gen  (for forward analysis)
  *   IN  = (OUT - kill) ∪ gen (for backward analysis)
  *
- * @param T the type of the dataflow facts (must support set operations)
+ * @param T the type of elements in the sets
+ * @param lattice the set lattice providing set operations
  */
 abstract class GenKillAnalysis<T>(
     override val direction: Direction,
-) : DataflowAnalysis<T>() {
+    private val lattice: SetLattice<T>,
+) : DataflowAnalysis<Set<T>>() {
     /**
      * Compute the gen set for a basic block or statement
      * Gen represents facts that are generated/defined at this point
      */
-    abstract fun gen(block: BasicBlock): T
+    abstract fun gen(block: BasicBlock): Set<T>
 
     /**
      * Compute the kill set for a basic block or statement
      * Kill represents facts that are invalidated/killed at this point
      */
-    abstract fun kill(block: BasicBlock): T
-
-    /**
-     * Set difference operation: input - kill
-     */
-    abstract fun difference(
-        input: T,
-        kill: T,
-    ): T
-
-    /**
-     * Set union operation: (input - kill) ∪ gen
-     */
-    abstract fun union(
-        left: T,
-        right: T,
-    ): T
+    abstract fun kill(block: BasicBlock): Set<T>
 
     /**
      * Transfer function using gen-kill pattern
      */
     override fun transfer(
-        input: T,
+        input: Set<T>,
         block: BasicBlock,
-    ): T {
+    ): Set<T> {
         val genSet = gen(block)
         val killSet = kill(block)
         // OUT = (IN - kill) ∪ gen
-        return union(difference(input, killSet), genSet)
+        return lattice.union(lattice.difference(input, killSet), genSet)
     }
+
+    /**
+     * Meet operator delegates to the lattice
+     */
+    override fun meet(values: List<Set<T>>): Set<T> = lattice.meet(values)
 }
 
 /**
@@ -277,14 +295,10 @@ abstract class GenKillAnalysis<T>(
  * A definition reaches a point if there exists a path from the definition to that point
  * where the variable is not redefined
  */
-class ReachingDefinitionsAnalysis : GenKillAnalysis<Set<String>>(Direction.FORWARD) {
+class ReachingDefinitionsAnalysis : GenKillAnalysis<String>(Direction.FORWARD, SetLattice()) {
     override fun initialValue(): Set<String> = emptySet()
 
     override fun boundaryValue(): Set<String> = emptySet()
-
-    override fun meet(values: List<Set<String>>): Set<String> =
-        // Union of all predecessor OUT sets
-        values.flatten().toSet()
 
     override fun gen(block: BasicBlock): Set<String> {
         val gen = mutableSetOf<String>()
@@ -319,16 +333,6 @@ class ReachingDefinitionsAnalysis : GenKillAnalysis<Set<String>>(Direction.FORWA
         }
         return kill
     }
-
-    override fun difference(
-        input: Set<String>,
-        kill: Set<String>,
-    ): Set<String> = input - kill
-
-    override fun union(
-        left: Set<String>,
-        right: Set<String>,
-    ): Set<String> = left + right
 }
 
 /**
@@ -336,14 +340,10 @@ class ReachingDefinitionsAnalysis : GenKillAnalysis<Set<String>>(Direction.FORWA
  * A variable is live at a point if its value may be used in the future
  * For live variables: gen = use, kill = def
  */
-class LiveVariablesAnalysis : GenKillAnalysis<Set<String>>(Direction.BACKWARD) {
+class LiveVariablesAnalysis : GenKillAnalysis<String>(Direction.BACKWARD, SetLattice()) {
     override fun initialValue(): Set<String> = emptySet()
 
     override fun boundaryValue(): Set<String> = emptySet()
-
-    override fun meet(values: List<Set<String>>): Set<String> =
-        // Union of all successor IN sets
-        values.flatten().toSet()
 
     override fun gen(block: BasicBlock): Set<String> {
         // Gen = use (variables used in the block)
@@ -385,16 +385,6 @@ class LiveVariablesAnalysis : GenKillAnalysis<Set<String>>(Direction.BACKWARD) {
         }
         return def
     }
-
-    override fun difference(
-        input: Set<String>,
-        kill: Set<String>,
-    ): Set<String> = input - kill
-
-    override fun union(
-        left: Set<String>,
-        right: Set<String>,
-    ): Set<String> = left + right
 
     private fun getUsedVariables(expr: Expr): Set<String> {
         val used = mutableSetOf<String>()
