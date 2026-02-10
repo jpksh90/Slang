@@ -68,6 +68,10 @@ application {
     mainClass.set("MainKt")
 }
 
+tasks.named<JavaExec>("run") {
+    standardInput = System.`in`
+}
+
 // Task to approve snapshot tests using the helper script.
 // Dry-run by default; pass -PapproveSnapshotsCommit=true to actually git-mv and commit.
 tasks.register<Exec>("approveSnapshots") {
