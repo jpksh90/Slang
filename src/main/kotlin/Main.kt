@@ -17,12 +17,14 @@ import slang.parser.File2ParseTreeTransformer
 import slang.repl.Repl
 import slang.runtime.ConcreteState
 import slang.runtime.Interpreter
+import slang.typeinfer.typeCheck
 import java.io.File
 import java.nio.file.Paths
 
 class SlangCLI : CliktCommand(name = "slang") {
     private val filename by argument(help = "Slang source file to execute").optional()
     private val hlir by option("--hlir", help = "Output HLIR representation instead of running").flag()
+    private val typecheckOnly by option("--typecheck", help = "Run Hindley-Milner type inference and report errors").flag()
     private val output by option("-o", help = "Output file for HLIR (default: stdout)")
 
     init {
@@ -54,6 +56,8 @@ class SlangCLI : CliktCommand(name = "slang") {
             onSuccess = { programUnit ->
                 if (hlir) {
                     outputHlir(programUnit)
+                } else if (typecheckOnly) {
+                    runTypeCheck(programUnit)
                 } else {
                     runProgram(programUnit)
                 }
@@ -81,6 +85,18 @@ class SlangCLI : CliktCommand(name = "slang") {
             echo("HLIR written to: $output")
         } else {
             echo(yamlString)
+        }
+    }
+
+    private fun runTypeCheck(programUnit: ProgramUnit) {
+        val errors = typeCheck(programUnit)
+        if (errors.isEmpty()) {
+            echo("Type checking passed. No errors found.")
+        } else {
+            echo("Type checking failed:", err = true)
+            for (e in errors) {
+                echo("  ${e.location} ${e.message}", err = true)
+            }
         }
     }
 
