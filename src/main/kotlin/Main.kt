@@ -17,6 +17,8 @@ import slang.parser.File2ParseTreeTransformer
 import slang.repl.Repl
 import slang.runtime.ConcreteState
 import slang.runtime.Interpreter
+import slang.tir.Hlir2TirTransform
+import slang.tir.prettyPrint
 import slang.typeinfer.typeCheck
 import java.io.File
 import java.nio.file.Paths
@@ -25,6 +27,7 @@ class SlangCLI : CliktCommand(name = "slang") {
     private val filename by argument(help = "Slang source file to execute").optional()
     private val hlir by option("--hlir", help = "Output HLIR representation instead of running").flag()
     private val typecheckOnly by option("--typecheck", help = "Run Hindley-Milner type inference and report errors").flag()
+    private val tir by option("--tir", help = "Output Typed Intermediate Representation").flag()
     private val output by option("-o", help = "Output file for HLIR (default: stdout)")
 
     init {
@@ -56,6 +59,8 @@ class SlangCLI : CliktCommand(name = "slang") {
             onSuccess = { programUnit ->
                 if (hlir) {
                     outputHlir(programUnit)
+                } else if (tir) {
+                    outputTir(programUnit)
                 } else if (typecheckOnly) {
                     runTypeCheck(programUnit)
                 } else {
@@ -64,6 +69,27 @@ class SlangCLI : CliktCommand(name = "slang") {
             },
             onFailure = { errors ->
                 echo("Parse errors:", err = true)
+                errors.forEach { error ->
+                    echo("  $error", err = true)
+                }
+            },
+        )
+    }
+
+    private fun outputTir(programUnit: ProgramUnit) {
+        val result = Hlir2TirTransform().transform(programUnit)
+        result.fold(
+            onSuccess = { tirUnit ->
+                val output = tirUnit.prettyPrint()
+                if (this.output != null) {
+                    File(this.output!!).writeText(output)
+                    echo("TIR written to: ${this.output}")
+                } else {
+                    echo(output)
+                }
+            },
+            onFailure = { errors ->
+                echo("Type errors:", err = true)
                 errors.forEach { error ->
                     echo("  $error", err = true)
                 }
