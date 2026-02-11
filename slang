@@ -1,5 +1,5 @@
 if [ $# -eq 0 ]; then
-  eval ./gradlew run
+  eval ./gradlew run --console=plan --quiet
 else
-  eval ./gradlew run --args=\"$@\"
+  eval ./gradlew run --console=plain --quiet --args=\"$@\"
 fi

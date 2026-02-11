@@ -10,10 +10,17 @@ plugins {
 }
 
 kotlin {
-    jvmToolchain(21)
+    jvmToolchain(25)
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_23)
+    }
 }
 
-group = "org.example"
+tasks.compileJava {
+    options.release.set(23)
+}
+
+group = "io.github.slang"
 version = "1.0-SNAPSHOT"
 
 repositories {
