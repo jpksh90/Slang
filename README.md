@@ -7,7 +7,7 @@ Slang is a small educational programming language implemented in Java/Kotlin wit
 ## Quick start
 
 1. Install prerequisites:
-   - JDK 21 or later.
+   - JDK 25 or later.
    - No global Gradle required; use the included wrapper `./gradlew`.
 2. Clone the repository:
    ```bash
