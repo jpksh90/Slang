@@ -7,19 +7,19 @@ import slang.parser.String2ParseTreeTransformer
 import slang.runtime.ConcreteState
 import slang.runtime.Interpreter
 
-const val PROMPT = "> "
+const val PROMPT = "slang> "
 
 class Repl {
     private val interpreter = Interpreter()
 
     fun start() {
-        println("Welcome to the Slang REPL!")
+        println("Slang REPL! Enter 'exit' or 'quit' to quit.")
         var state = ConcreteState()
         while (true) {
             print(PROMPT)
             val input = readlnOrNull() ?: break
             if (input.trim().isEmpty()) continue
-            if (input == "exit") break
+            if (input == "exit" || input == "quit") break
 
             try {
                 val compilerPipeline = String2ParseTreeTransformer() then ParseTree2HlirTrasnformer()

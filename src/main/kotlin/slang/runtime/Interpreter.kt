@@ -165,6 +165,7 @@ class Interpreter {
 
             is Stmt.ExprStmt -> {
                 val (newState, value) = evaluateExpr(stmt.expr, state)
+                print(valueToString(value) + "\n")
                 return Pair(newState, ControlFlow.Normal(value))
             }
 
