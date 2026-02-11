@@ -2,7 +2,7 @@ import java.nio.file.Files
 import java.nio.file.Paths
 
 plugins {
-    kotlin("jvm") version "2.1.0"
+    kotlin("jvm") version "2.2.0"
     antlr
     application
     id("org.jlleitschuh.gradle.ktlint") version "12.1.0"
