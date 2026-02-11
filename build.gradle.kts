@@ -18,6 +18,37 @@ kotlin {
 
 tasks.compileJava {
     options.release.set(23)
+    // Ensure module-info.java is compiled after Kotlin classes are available
+    dependsOn(tasks.named("compileKotlin"))
+    // Use module path for javac so it can resolve module-info.java
+    modularity.inferModulePath.set(true)
+    // Patch the module with Kotlin-compiled classes so javac sees them,
+    // and force the classpath onto the module path for automatic modules.
+    // Exclude JARs that cause split-package conflicts on the module path.
+    doFirst {
+        val classesDirs = sourceSets.main.get().output.classesDirs.asPath
+        val filteredCp =
+            classpath.filter { file ->
+                val name = file.name
+                // Exclude ANTLR tool JARs (antlr4 bundles the runtime)
+                !name.startsWith("antlr4-4.") &&
+                    !name.startsWith("antlr-runtime-") &&
+                    !name.startsWith("ST4-") &&
+                    // antlr4-runtime bundles treelayout; exclude standalone JAR
+                    !name.startsWith("org.abego.treelayout.core-") &&
+                    // clikt-mordant-jvm extends clikt-jvm with split packages; keep only mordant
+                    !name.matches(Regex("clikt-jvm.*\\.jar"))
+            }
+        options.compilerArgs.addAll(
+            listOf(
+                "--patch-module",
+                "slang=$classesDirs",
+                "--module-path",
+                filteredCp.asPath,
+            ),
+        )
+        classpath = files()
+    }
 }
 
 group = "io.github.slang"
